@@ -116,6 +116,7 @@ input, textarea { font: inherit; color: inherit; }
 .request-mode button { min-width: 118px; border-radius: 7px; padding: 10px 16px; background: transparent; color: #aeb9cb; font-weight: 800; }
 .request-mode button.active { background: var(--primary); color: #002a78; }
 .request-mode p { margin: 0; color: #9ba8bd; font-size: 14px; }
+.profile-mode { margin: 4px 0 28px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 18px; border-top: 1px solid var(--line); margin-top: 42px; padding-top: 24px; }
 .ghost-action, .solid-action { display: inline-flex; align-items: center; gap: 10px; border-radius: 9px; padding: 15px 30px; font-weight: 800; }
 .ghost-action { background: transparent; border: 1px solid var(--line-strong); }
@@ -203,11 +204,15 @@ input, textarea { font: inherit; color: inherit; }
 .structured-question .quick-picks button.picked { border-color: var(--green); color: var(--green); background: rgba(78,222,163,.12); }
 .structured-question .quick-picks small { display: block; margin-top: 5px; color: #9ca8bb; }
 .structured-question textarea { min-height: 98px; padding: 16px; margin-top: 8px; }
+.structured-question .idea-input { min-height: 86px; margin-top: 14px; border-style: dashed; background: rgba(15,28,43,.72); }
+.postpone-button { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 9px; background: transparent; color: #cbd6e8; font-weight: 800; }
+.postpone-button:hover { background: rgba(96,165,250,.12); }
 .answer-box { align-self: end; margin: 34px 40px 0; min-height: 118px; padding: 24px; border: 1px solid var(--line-strong); border-radius: 14px; background: rgba(18,33,49,.8); color: #727f92; font-size: 18px; }
 .answer-box span { float: right; margin-top: 54px; display: flex; gap: 10px; }
 .chat-panel footer { display: flex; align-items: center; gap: 18px; padding: 34px 40px; }
 .continue, .disabled { display: inline-flex; align-items: center; gap: 13px; padding: 18px 30px; border-radius: 9px; font-size: 20px; font-weight: 800; }
 .continue { background: var(--green); color: #003824; }
+.secondary-generate { display: inline-flex; align-items: center; gap: 10px; padding: 13px 18px; border-radius: 9px; border: 1px solid rgba(96,165,250,.4); background: rgba(37,99,235,.22); color: #dbeafe; font-size: 16px; font-weight: 900; }
 .disabled { background: transparent; border: 1px solid var(--line); color: #788497; }
 .chat-panel footer small { margin-left: auto; color: #cfd7e6; }
 
@@ -233,7 +238,7 @@ input, textarea { font: inherit; color: inherit; }
 .mini-terminal { align-self: center; justify-self: center; width: 330px; padding: 24px; border: 1px solid var(--line-strong); border-radius: 10px; background: #102033; font-family: "JetBrains Mono"; }
 .mini-terminal span { color: #8f9bad; }
 .mini-terminal p { color: #d0e1fa; }
-.floating-confirm { position: fixed; left: 50%; bottom: 28px; transform: translateX(-30%); display: flex; align-items: center; gap: 18px; width: 710px; padding: 20px; border: 1px solid var(--line-strong); border-radius: 18px; background: rgba(18,33,49,.96); backdrop-filter: blur(18px); box-shadow: 0 20px 60px rgba(0,0,0,.32); }
+.floating-confirm { position: fixed; left: 50%; bottom: 96px; transform: translateX(-30%); display: flex; align-items: center; gap: 18px; width: min(710px, calc(100vw - 320px)); padding: 20px; border: 1px solid var(--line-strong); border-radius: 18px; background: rgba(18,33,49,.96); backdrop-filter: blur(18px); box-shadow: 0 20px 60px rgba(0,0,0,.32); }
 .floating-confirm button { display: inline-flex; gap: 12px; align-items: center; border-radius: 10px; padding: 15px 22px; background: #2a3c50; font-weight: 800; }
 .floating-confirm span { color: #9da8bb; font-family: "JetBrains Mono"; }
 .floating-confirm .confirm { margin-left: auto; background: var(--blue); color: white; }

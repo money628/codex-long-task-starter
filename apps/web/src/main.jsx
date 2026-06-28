@@ -85,6 +85,8 @@ const providerPresets = [
 const defaultProjectDraft = {
   projectName: "Project Alpha",
   oneLineIdea: "AI 项目访谈官 + Codex/OpenCode 长任务文件生成器",
+  userBackground: "我是第一次整理这个项目想法，希望 AI 用更容易理解的问题一步步帮我确认需求。",
+  codingExperience: "代码小白",
   projectType: "Web 应用",
   techStackPreference: ["React", "Tailwind", "TypeScript"],
   deploymentTarget: "Vercel / Netlify",
@@ -251,7 +253,10 @@ function App() {
       setMarkdownFiles(files);
       setRoute("results");
     } catch (error) {
-      setNotice(toUserFacingError(error));
+      const fallbackFiles = generateMarkdownFilesFromSpec(spec);
+      setMarkdownFiles(fallbackFiles);
+      setRoute("results");
+      setNotice(`${toUserFacingError(error)} 已先使用本地模板生成 Markdown，你可以继续编辑、复制或下载。`);
     } finally {
       setBusy("");
     }
@@ -538,6 +543,14 @@ function CreateProjectPage({ projectDraft, setProjectDraft, startInterview, busy
       </div>
       <section className="panel big-form">
         <EditableField label="项目名称" value={projectDraft.projectName} onChange={(v) => update("projectName", v)} />
+        <label className="field textarea-field"><span>先介绍一下你自己</span><textarea value={projectDraft.userBackground || ""} onChange={(e) => update("userBackground", e.target.value)} placeholder="例如：我是代码小白/产品经理/独立开发者，只知道大概想法，希望 AI 用简单问题引导我。" /></label>
+        <div className="request-mode profile-mode">
+          <span>你的代码经验</span>
+          <div>
+            {["代码小白", "会改代码", "熟悉开发"].map((level) => <button key={level} className={projectDraft.codingExperience === level ? "active" : ""} onClick={() => update("codingExperience", level)}>{level}</button>)}
+          </div>
+          <p>AI 会根据你的背景调整问题深度；不懂专业问题时可以直接写“后续再考虑”。</p>
+        </div>
         <label className="field textarea-field"><span>一句话项目描述</span><textarea value={projectDraft.oneLineIdea} onChange={(e) => update("oneLineIdea", e.target.value)} placeholder="例如：一个基于区块链的去中心化咖啡豆追踪系统..." /></label>
       </section>
       <section>
@@ -580,6 +593,7 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
   const [localNotice, setLocalNotice] = React.useState("");
   React.useEffect(() => setAnswers({}), [turnResult]);
   const progress = Math.round((turnResult.confidenceScore || 0) * 100);
+  const canGenerateSpec = turnResult.isReadyToGenerateSpec || transcript.length >= 2 || progress >= 65;
   const confirmed = Object.keys(turnResult.extractedFacts || {}).filter((key) => {
     const value = turnResult.extractedFacts[key];
     return Array.isArray(value) ? value.length : Boolean(value);
@@ -594,8 +608,22 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
       return { ...prev, [id]: [...current] };
     });
   }
+  function setFreeIdea(id, value) {
+    setLocalNotice("");
+    setAnswers((prev) => ({ ...prev, [`${id}__idea`]: value }));
+  }
+  function postponeQuestion(question) {
+    setLocalNotice("");
+    setAnswers((prev) => ({
+      ...prev,
+      [question.id]: "后续再考虑",
+      [`${question.id}__idea`]: "当前没有明确计划，后续再考虑。请不要继续追问这个问题，先记录为待确认。"
+    }));
+  }
   function answerIsFilled(question) {
     const value = answers[question.id];
+    const idea = answers[`${question.id}__idea`];
+    if (typeof idea === "string" && idea.trim().length > 0) return true;
     if (Array.isArray(value)) return value.length > 0;
     return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
   }
@@ -636,7 +664,9 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
               {q.options.length > 0 && <div className="quick-picks">
                 {q.options.map((option) => <button className={(Array.isArray(answers[q.id]) ? answers[q.id].includes(option.label) : answers[q.id] === option.label) ? "picked" : ""} key={option.label} onClick={() => setAnswer(q.id, option.label, q.type === "multi")}>{option.label}<small>{option.description}</small></button>)}
               </div>}
-              {q.type === "text" && <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value, false)} placeholder="请输入你的补充说明..." />}
+              {q.type === "text" && <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value, false)} placeholder="请输入你的补充说明；不确定可以写“后续再考虑”。" />}
+              <textarea className="idea-input" value={answers[`${q.id}__idea`] || ""} onChange={(e) => setFreeIdea(q.id, e.target.value)} placeholder="你的想法 / 不懂的地方 / 当前没有计划都可以写在这里。" />
+              <button className="postpone-button" type="button" onClick={() => postponeQuestion(q)}>当前没计划，后续再考虑</button>
               {q.required && !answerIsFilled(q) && <small className="required-hint">必填</small>}
             </article>
           ))}
@@ -644,8 +674,8 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
         {localNotice && <p className="inline-status error">{localNotice}</p>}
         <footer>
           <button className="continue" onClick={submitAnswers} disabled={Boolean(busy)}>继续访谈 <ArrowRight size={24} /></button>
-          <button className={turnResult.isReadyToGenerateSpec || transcript.length >= 1 ? "continue" : "disabled"} onClick={generateSpec} disabled={Boolean(busy) || !(turnResult.isReadyToGenerateSpec || transcript.length >= 1)}><Sparkles size={20} /> 生成 ProjectSpec</button>
-          <small>{busy || "每轮会校验 InterviewTurnResult JSON"}</small>
+          <button className={canGenerateSpec ? "secondary-generate" : "disabled"} onClick={generateSpec} disabled={Boolean(busy) || !canGenerateSpec}><Sparkles size={18} /> 生成初版 ProjectSpec</button>
+          <small>{busy || (canGenerateSpec ? "已达到最低对齐度，可生成初版报告。" : "建议至少完成 2 轮访谈或理解度达到 65%，否则报告可能不详细。")}</small>
         </footer>
       </section>
     </div>

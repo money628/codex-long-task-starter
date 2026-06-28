@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { callOpenAICompatible, hasUsableApiConfig, testConnection } from "../packages/ai/src/index.js";
+import { buildMarkdownFiles, callOpenAICompatible, hasUsableApiConfig, testConnection } from "../packages/ai/src/index.js";
+import { createExampleSpec, markdownFileNames } from "../packages/core/src/index.js";
 
 async function withMockOpenAI(handler) {
   const requests = [];
@@ -161,6 +162,29 @@ test("JSON response_format 不被兼容服务支持时会自动降级重试", as
     assert.equal(count, 2);
     assert.deepEqual(mock.requests[0].body.response_format, { type: "json_object" });
     assert.equal(mock.requests[1].body.response_format, undefined);
+  } finally {
+    await mock.close();
+  }
+});
+
+test("Markdown 生成请求失败时会降级使用本地模板", async () => {
+  const mock = await withMockOpenAI((req, res) => {
+    sendJson(res, 502, { error: { message: "upstream unavailable" } });
+  });
+
+  try {
+    const files = await buildMarkdownFiles(
+      {
+        baseUrl: mock.baseUrl,
+        apiKey: "sk-test-secret",
+        modelName: "test-model",
+        requestMode: "direct"
+      },
+      createExampleSpec()
+    );
+
+    assert.deepEqual(Object.keys(files).sort(), [...markdownFileNames].sort());
+    assert.match(files["START.md"], /启动指令/);
   } finally {
     await mock.close();
   }
