@@ -243,7 +243,9 @@ node apps/cli/src/index.js doctor
 - [英文发布说明](RELEASE_NOTES.md)
 - [发布检查清单](docs/release-checklist.md)
 - [下一阶段规划简报](docs/next-planning-brief.md)
-- [DeepSeek 访谈质量优化计划](docs/deepseek-interview-optimization.md)
+- [Provider 访谈质量优化计划](docs/provider-interview-optimization.md)
+- [产品定位与商业化判断](docs/product-positioning.zh-CN.md)
+- [用户试用反馈模板](docs/user-feedback-template.zh-CN.md)
 
 ## 许可证
 

@@ -15,7 +15,9 @@
 - `README.md`
 - `docs/user-guide.zh-CN.md`
 - `docs/MVP_CHECKLIST.md`
-- `docs/deepseek-interview-optimization.md`
+- `docs/provider-interview-optimization.md`
+- `docs/product-positioning.zh-CN.md`
+- `docs/user-feedback-template.zh-CN.md`
 - `docs/requirements.md`
 - `docs/technical-spec.md`
 - `docs/development-process.md`

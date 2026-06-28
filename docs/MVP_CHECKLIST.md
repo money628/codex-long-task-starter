@@ -52,12 +52,13 @@
 
 ### 需要继续观察
 
-- [ ] DeepSeek 真实外部 API 的长对话质量。
+- [ ] OpenAI-compatible Providers 的真实外部 API 长对话质量，包含但不限于 DeepSeek、OpenAI、Kimi、Qwen、OpenRouter。
 - [ ] 用户填写非标准模型名时的错误提示是否足够清楚。
 - [ ] ProjectSpec 自动补齐在复杂项目中的稳定性。
 - [ ] Markdown 是否足够直接交给 Codex / OpenCode 执行。
 - [ ] 桌面快捷方式目前是本机辅助脚本，不是正式安装器。
 - [ ] npm alpha 尚未发布。
+- [ ] 基于 `docs/user-feedback-template.zh-CN.md` 收集第一批真实用户反馈。
 
 ## 核心闭环验收
 
@@ -102,7 +103,8 @@ node apps/cli/src/index.js doctor
 
 优先推进 `v0.1.1-alpha`：
 
-1. 用真实 DeepSeek Key 跑 2-3 个真实项目。
+1. 用不同 Provider 跑 2-3 个真实项目。
 2. 根据真实卡点修复访谈、错误提示和导出内容质量。
 3. 增加更多真实 examples。
-4. 稳定后再发布 npm alpha。
+4. 用 `docs/product-positioning.zh-CN.md` 判断是否进入轻商业验证。
+5. 稳定后再发布 npm alpha。
