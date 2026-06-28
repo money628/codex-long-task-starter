@@ -1,0 +1,134 @@
+{
+  "projectName": "Tech Explain Translator",
+  "projectType": "Chrome Extension",
+  "oneLineIdea": "选中网页里的英文技术段落后，在侧边栏生成中文解释、术语拆解和可复制摘要。",
+  "targetUsers": [
+    "中文开发者",
+    "技术学习者",
+    "阅读英文文档的产品工程师"
+  ],
+  "userPainPoints": [
+    "官方文档术语密集",
+    "普通翻译缺少技术上下文",
+    "阅读时频繁切换工具会打断思路"
+  ],
+  "coreGoal": "让用户在不离开当前网页的情况下理解英文技术内容，并沉淀可复制的中文摘要。",
+  "mvpScope": [
+    "右键菜单触发",
+    "侧边栏展示解释",
+    "API Key 配置页",
+    "OpenAI-compatible 调用",
+    "术语拆解",
+    "复制摘要",
+    "错误提示"
+  ],
+  "outOfScope": [
+    "账号系统",
+    "云端历史",
+    "团队共享",
+    "付费订阅",
+    "移动浏览器支持"
+  ],
+  "coreFeatures": [
+    "选中文本读取",
+    "右键菜单",
+    "侧边栏 UI",
+    "模型配置",
+    "解释结果渲染",
+    "复制按钮"
+  ],
+  "rolesAndPermissions": [
+    "单用户本地扩展",
+    "无团队权限",
+    "用户主动选择文本后才调用模型"
+  ],
+  "pagesOrModules": [
+    "manifest",
+    "background",
+    "content-script",
+    "side-panel",
+    "options",
+    "storage"
+  ],
+  "dataSources": [
+    "用户选中文本",
+    "当前页面 URL",
+    "用户自带 API Key"
+  ],
+  "externalDependencies": [
+    "Chrome Extension APIs",
+    "OpenAI-compatible API"
+  ],
+  "techStackPreference": [
+    "Manifest V3",
+    "Vanilla JavaScript",
+    "CSS"
+  ],
+  "deploymentTarget": "Chrome 开发者模式加载未打包扩展，后续可发布到 Chrome Web Store",
+  "monetizationIntent": "开源自用，第一版不商业化",
+  "constraints": [
+    "API Key 只存浏览器本地",
+    "不自动抓取整页内容",
+    "限制单次解释文本长度",
+    "错误信息必须中文化"
+  ],
+  "forbiddenActions": [
+    "不要把 API Key 写入日志",
+    "不要上传未选中的页面内容",
+    "不要绕过网站安全限制"
+  ],
+  "risks": [
+    "网页 CSP 可能影响注入",
+    "长文本调用成本高",
+    "模型 JSON 输出不稳定"
+  ],
+  "assumptions": [
+    "第一版只支持 Chrome",
+    "用户会自行提供 API Key",
+    "侧边栏优先于弹窗体验"
+  ],
+  "recommendations": [
+    "增加最大字符数限制",
+    "优先支持本地配置测试连接",
+    "保留 mock 模式便于开发"
+  ],
+  "acceptanceCriteria": [
+    "右键菜单可触发",
+    "侧边栏可显示解释",
+    "配置页可保存 Key",
+    "复制摘要可用",
+    "无 Key 时提示配置"
+  ],
+  "doneWhen": [
+    "扩展可加载",
+    "选中文本可解释",
+    "错误提示不泄露 Key",
+    "README 说明安装方式"
+  ],
+  "testStrategy": [
+    "Chrome 开发者模式加载测试",
+    "模拟 API 响应",
+    "手动检查 storage 和控制台日志"
+  ],
+  "milestones": [
+    {
+      "name": "Extension MVP",
+      "goal": "完成选中文本到侧边栏解释闭环",
+      "tasks": [
+        "实现 manifest",
+        "实现右键菜单",
+        "实现配置页",
+        "实现侧边栏",
+        "接入模型调用"
+      ],
+      "acceptanceCriteria": [
+        "用户不离开网页即可看到解释",
+        "配置错误有中文提示"
+      ]
+    }
+  ],
+  "unresolvedQuestions": [
+    "是否需要本地历史记录"
+  ],
+  "interviewSummary": "示例项目：浏览器扩展场景，强调本地密钥、安全边界和用户主动触发。"
+}

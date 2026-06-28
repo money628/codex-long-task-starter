@@ -1,0 +1,31 @@
+{
+  "name": "@codex-starter/core",
+  "version": "0.1.0-alpha.0",
+  "description": "Shared schemas, validation, ProjectSpec utilities, and Markdown generation for Codex Long Task Starter.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "package.json",
+    "README.md"
+  ],
+  "keywords": [
+    "codex",
+    "project-spec",
+    "markdown",
+    "zod"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "projectName": "Simple Todo App",
+  "projectType": "Web App",
+  "oneLineIdea": "一个适合新手练习的待办事项 Web 应用，支持任务创建、完成、过滤和本地持久化。",
+  "targetUsers": [
+    "学习前端开发的新手",
+    "需要轻量任务清单的个人用户"
+  ],
+  "userPainPoints": [
+    "纸质清单不方便修改",
+    "复杂任务工具学习成本高",
+    "新手需要一个结构清楚的练习项目"
+  ],
+  "coreGoal": "用最小技术栈实现一个清晰、可测试、可扩展的本地 Todo 应用。",
+  "mvpScope": [
+    "任务新增",
+    "任务完成/取消完成",
+    "任务删除",
+    "全部/未完成/已完成过滤",
+    "localStorage 持久化",
+    "空状态和错误提示"
+  ],
+  "outOfScope": [
+    "用户登录",
+    "云同步",
+    "团队协作",
+    "移动端原生应用",
+    "付费功能"
+  ],
+  "coreFeatures": [
+    "任务输入框",
+    "任务列表",
+    "状态过滤",
+    "本地保存",
+    "基础响应式布局"
+  ],
+  "rolesAndPermissions": [
+    "单用户本地使用",
+    "无权限系统"
+  ],
+  "pagesOrModules": [
+    "App",
+    "TodoInput",
+    "TodoList",
+    "TodoItem",
+    "FilterTabs",
+    "storage"
+  ],
+  "dataSources": [
+    "用户输入的任务文本",
+    "浏览器 localStorage"
+  ],
+  "externalDependencies": [
+    "React",
+    "Vite"
+  ],
+  "techStackPreference": [
+    "React",
+    "Vite",
+    "CSS"
+  ],
+  "deploymentTarget": "静态部署到 Vercel、Netlify 或 GitHub Pages",
+  "monetizationIntent": "无商业化，作为学习项目和示例项目",
+  "constraints": [
+    "任务文本不能为空",
+    "刷新页面后任务不能丢失",
+    "界面必须中文化",
+    "不需要后端"
+  ],
+  "forbiddenActions": [
+    "不要引入数据库",
+    "不要加入登录系统",
+    "不要把用户数据上传到服务器"
+  ],
+  "risks": [
+    "localStorage 数据格式变更可能导致旧数据读取失败",
+    "过度设计会让新手示例变复杂"
+  ],
+  "assumptions": [
+    "用户使用现代浏览器",
+    "任务量不会超过几百条"
+  ],
+  "recommendations": [
+    "先用纯本地状态实现，再抽出 storage helper",
+    "为过滤和持久化写单元测试"
+  ],
+  "acceptanceCriteria": [
+    "可以新增任务",
+    "可以标记完成",
+    "可以删除任务",
+    "可以过滤任务",
+    "刷新后数据保留",
+    "pnpm build 通过"
+  ],
+  "doneWhen": [
+    "所有 MVP 功能可用",
+    "无控制台错误",
+    "构建通过",
+    "README 说明如何启动"
+  ],
+  "testStrategy": [
+    "手动测试新增/完成/删除/过滤",
+    "单元测试 storage helper",
+    "构建验证"
+  ],
+  "milestones": [
+    {
+      "name": "Todo MVP",
+      "goal": "完成本地 Todo 主流程",
+      "tasks": [
+        "创建 React 应用结构",
+        "实现任务状态管理",
+        "接入 localStorage",
+        "完成过滤和样式"
+      ],
+      "acceptanceCriteria": [
+        "刷新后任务保留",
+        "过滤结果正确",
+        "构建通过"
+      ]
+    }
+  ],
+  "unresolvedQuestions": [
+    "是否需要拖拽排序"
+  ],
+  "interviewSummary": "示例项目：用简单 Todo App 展示 ProjectSpec 到 Markdown 文件包的完整输出。"
+}

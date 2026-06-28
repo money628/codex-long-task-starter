@@ -1,0 +1,14 @@
+{
+  "name": "@codex-starter/ai",
+  "private": true,
+  "version": "0.1.0-alpha.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "dependencies": {
+    "@codex-starter/core": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

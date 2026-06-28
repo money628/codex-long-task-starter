@@ -1,0 +1,23 @@
+{
+  "name": "@codex-starter/web",
+  "private": true,
+  "version": "0.1.0-alpha.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@codex-starter/ai": "workspace:*",
+    "@codex-starter/core": "workspace:*",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jszip": "^3.10.1",
+    "vite": "^6.0.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^0.468.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {}
+}
