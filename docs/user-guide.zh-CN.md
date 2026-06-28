@@ -1,6 +1,6 @@
 # 中文使用手册
 
-本文档面向第一次使用 Codex Long Task Starter 的中文开发者。目标是让你从“一个模糊项目想法”走到“一组可以交给 Codex / OpenCode 执行的任务文件”。
+本文档面向第一次使用 Codex 长任务启动器 / Codex Long Task Starter 的中文开发者。目标是让你从“一个模糊项目想法”走到“一组可以交给 Codex / OpenCode 执行的任务文件”。
 
 ## 1. 准备环境
 

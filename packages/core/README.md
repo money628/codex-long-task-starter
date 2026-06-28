@@ -1,6 +1,6 @@
 # @codex-starter/core
 
-Shared core utilities for Codex Long Task Starter.
+Shared core utilities for Codex Long Task Starter / Codex 长任务启动器.
 
 This package contains:
 

@@ -1,7 +1,7 @@
 # 开发需求
 
 ## 项目定位
-Codex Long Task Starter 是 AI 项目访谈官 + Codex/OpenCode 长任务文件生成器 + CLI 自动写入工具。
+Codex 长任务启动器（Codex Long Task Starter）是 AI 项目访谈官 + Codex/OpenCode 长任务文件生成器 + CLI 自动写入工具。
 
 核心价值不是固定模板填空，而是在开发前通过 AI 深度访谈，把模糊想法整理成结构化 ProjectSpec，再生成可长期执行的项目上下文文件。
 

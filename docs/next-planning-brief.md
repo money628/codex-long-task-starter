@@ -1,10 +1,10 @@
-# Codex Long Task Starter 下一阶段规划讨论文档
+# Codex 长任务启动器 / Codex Long Task Starter 下一阶段规划讨论文档
 
 本文档用于交给 GPT 或其他协作者，讨论项目从 `v0.1.0-alpha` 继续推进时的步骤规划。
 
 ## 1. 项目一句话定位
 
-Codex Long Task Starter 是一个面向 AI 编程长任务的本地优先启动器：通过 Web UI 配置用户自己的 OpenAI-compatible API Key，由 AI 动态访谈项目需求，生成结构化 `ProjectSpec`，再导出可交给 Codex / OpenCode 执行的 Markdown 文件包，并提供 CLI 写入目标项目目录。
+Codex 长任务启动器（Codex Long Task Starter）是一个面向 AI 编程长任务的本地优先启动器：通过 Web UI 配置用户自己的 OpenAI-compatible API Key，由 AI 动态访谈项目需求，生成结构化 `ProjectSpec`，再导出可交给 Codex / OpenCode 执行的 Markdown 文件包，并提供 CLI 写入目标项目目录。
 
 ## 2. 当前完成度判断
 

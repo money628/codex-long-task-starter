@@ -32,4 +32,4 @@ UNCONFIRMED
 - 构建验证
 ## 最近执行记录
 
-- 由 Codex Long Task Starter 根据 ProjectSpec 初始化
+- 由 Codex 长任务启动器 / Codex Long Task Starter 根据 ProjectSpec 初始化

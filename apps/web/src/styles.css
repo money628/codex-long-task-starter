@@ -27,6 +27,9 @@ input, textarea { font: inherit; color: inherit; }
 .top-nav { position: sticky; top: 0; z-index: 20; height: 58px; display: flex; align-items: center; gap: 36px; padding: 0 24px; border-bottom: 1px solid var(--line); background: rgba(5, 20, 36, .92); backdrop-filter: blur(18px); }
 .top-nav--compact { height: 54px; }
 .brand { display: flex; align-items: center; gap: 12px; background: transparent; font-family: Geist, sans-serif; font-size: 20px; font-weight: 750; letter-spacing: 0; }
+.brand-copy { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.05; }
+.brand-copy strong { font-size: 18px; font-weight: 800; }
+.brand-copy small { margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 650; }
 .brand-mark { display: none; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: var(--primary); color: #002a78; }
 .nav-links { display: flex; gap: 26px; margin-right: auto; }
 .nav-links button { background: transparent; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 13px; letter-spacing: .02em; color: #cbd5e8; padding: 18px 0 15px; border-bottom: 2px solid transparent; }

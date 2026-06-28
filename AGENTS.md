@@ -1,6 +1,6 @@
 # Agent 工作规则
 
-本仓库的目标是把 Codex Long Task Starter 打磨成可安装、可运行、可测试、可发布、可让真实用户试用的 local-first MVP。
+本仓库的目标是把 Codex 长任务启动器 / Codex Long Task Starter 打磨成可安装、可运行、可测试、可发布、可让真实用户试用的 local-first MVP。
 
 ## 必须保持的方向
 

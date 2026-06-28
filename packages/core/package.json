@@ -1,7 +1,7 @@
 {
   "name": "@codex-starter/core",
   "version": "0.1.0-alpha.1",
-  "description": "Shared schemas, validation, ProjectSpec utilities, and Markdown generation for Codex Long Task Starter.",
+  "description": "Shared schemas, validation, ProjectSpec utilities, and Markdown generation for Codex Long Task Starter / Codex 长任务启动器.",
   "type": "module",
   "main": "./src/index.js",
   "exports": {

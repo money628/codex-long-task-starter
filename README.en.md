@@ -1,8 +1,8 @@
-# Codex Long Task Starter
+# Codex Long Task Starter / Codex 长任务启动器
 
 Local-first AI tooling that turns vague project ideas into Codex / OpenCode executable task packs.
 
-Codex Long Task Starter helps you configure your own OpenAI-compatible API key, run an AI interview to clarify requirements, generate a validated `ProjectSpec`, export Codex/OpenCode-ready Markdown files, and write them into a target project with a CLI.
+Codex Long Task Starter, also named Codex 长任务启动器 in Chinese, helps you configure your own OpenAI-compatible API key, run an AI interview to clarify requirements, generate a validated `ProjectSpec`, export Codex/OpenCode-ready Markdown files, and write them into a target project with a CLI.
 
 中文说明见 [README.md](README.md)。
 

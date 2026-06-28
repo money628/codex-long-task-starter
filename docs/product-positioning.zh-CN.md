@@ -1,10 +1,10 @@
 # 产品定位与商业化判断
 
-本文档用于判断 Codex Long Task Starter 在开源 alpha 阶段之后，应该继续打磨还是进入商业化验证。
+本文档用于判断 Codex 长任务启动器 / Codex Long Task Starter 在开源 alpha 阶段之后，应该继续打磨还是进入商业化验证。
 
 ## 一句话定位
 
-Codex Long Task Starter 是一个 local-first 的 AI 编程长任务启动器，帮助用户把模糊项目想法整理成 Codex / OpenCode 可以执行的任务文件包。
+Codex 长任务启动器（Codex Long Task Starter）是一个 local-first 的 AI 编程长任务启动器，帮助用户把模糊项目想法整理成 Codex / OpenCode 可以执行的任务文件包。
 
 ## 当前阶段判断
 

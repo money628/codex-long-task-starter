@@ -1,6 +1,6 @@
 # GitHub Release Preparation
 
-Use this document when publishing Codex Long Task Starter as an open source `v0.1.0-alpha` project.
+Use this document when publishing Codex Long Task Starter / Codex 长任务启动器 as an open source `v0.1.0-alpha` project.
 
 ## Repository Setup
 
@@ -51,7 +51,7 @@ v0.1.0-alpha.0
 
 Use `RELEASE_NOTES.md` as the canonical English release notes and `RELEASE_NOTES.zh-CN.md` as the Chinese release notes.
 
-Codex Long Task Starter `v0.1.0-alpha.0` is the first local-first alpha release. It helps users configure their own OpenAI-compatible API key, run an AI interview for project requirements, generate a validated `ProjectSpec`, export Codex/OpenCode-ready Markdown files, and write those files into a target project through the CLI.
+Codex Long Task Starter / Codex 长任务启动器 `v0.1.0-alpha.0` is the first local-first alpha release. It helps users configure their own OpenAI-compatible API key, run an AI interview for project requirements, generate a validated `ProjectSpec`, export Codex/OpenCode-ready Markdown files, and write those files into a target project through the CLI.
 
 ### Highlights
 

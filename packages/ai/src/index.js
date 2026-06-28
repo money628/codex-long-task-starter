@@ -136,7 +136,7 @@ async function parseAndValidateProjectSpec(config, raw) {
   }
 }
 
-const interviewSystemPrompt = `你是 Codex Long Task Starter 的 AI 项目访谈官。
+const interviewSystemPrompt = `你是 Codex 长任务启动器 / Codex Long Task Starter 的 AI 项目访谈官。
 你不是模板填空器。你要通过动态追问，把模糊项目想法转成可执行 ProjectSpec。
 开始访谈时必须先理解用户是谁、是否代码小白、是否熟悉产品/开发概念，并用匹配用户水平的语言提问。
 必须输出严格 JSON，结构为：

@@ -1,6 +1,6 @@
 # codex-long-task-starter
 
-把 Codex Long Task Starter 生成的 `project-spec.json` 或 Markdown 文件包写入当前项目目录。
+把 Codex 长任务启动器 / Codex Long Task Starter 生成的 `project-spec.json` 或 Markdown 文件包写入当前项目目录。
 
 ## 使用
 

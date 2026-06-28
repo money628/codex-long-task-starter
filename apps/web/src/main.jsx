@@ -54,6 +54,10 @@ import {
 } from "@codex-starter/ai";
 import "./styles.css";
 
+const PRODUCT_NAME_ZH = "Codex 长任务启动器";
+const PRODUCT_NAME_EN = "Codex Long Task Starter";
+const PRODUCT_NAME_FULL = `${PRODUCT_NAME_ZH} / ${PRODUCT_NAME_EN}`;
+
 const LS_KEYS = {
   api: "clts.apiConfig",
   draft: "clts.projectDraft",
@@ -286,7 +290,7 @@ function TopNav({ route, go, compact = false }) {
     <header className={`top-nav ${compact ? "top-nav--compact" : ""}`}>
       <button className="brand" onClick={() => go("home")}>
         <span className="brand-mark"><TerminalSquare size={22} /></span>
-        <span>Codex Long Task Starter</span>
+        <span className="brand-copy"><strong>{PRODUCT_NAME_ZH}</strong><small>{PRODUCT_NAME_EN}</small></span>
       </button>
       <nav className="nav-links">
         <button className={route === "home" ? "active" : ""} onClick={() => go("home")}>首页</button>
@@ -402,7 +406,7 @@ function HomePage({ go, startInterview }) {
         <p>本工具不提供模型额度，使用你自己的 API Key。</p>
       </section>
       <footer className="home-footer">
-        <strong>Codex Long Task Starter</strong>
+        <strong>{PRODUCT_NAME_FULL}</strong>
         <span>文档</span><span>源码</span><span>MIT 许可</span>
       </footer>
     </main>

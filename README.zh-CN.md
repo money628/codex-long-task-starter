@@ -1,6 +1,6 @@
-# Codex Long Task Starter 中文说明
+# Codex 长任务启动器 / Codex Long Task Starter 中文说明
 
-Codex Long Task Starter 是一个 local-first 的 AI 编程长任务启动器：把模糊项目想法整理成结构化 `ProjectSpec`，再生成可以交给 Codex / OpenCode 执行的 Markdown 任务包。
+Codex 长任务启动器（Codex Long Task Starter）是一个 local-first 的 AI 编程长任务启动器：把模糊项目想法整理成结构化 `ProjectSpec`，再生成可以交给 Codex / OpenCode 执行的 Markdown 任务包。
 
 默认中文首页已经放在 [README.md](README.md)。如果你是第一次使用，建议按下面顺序阅读：
 

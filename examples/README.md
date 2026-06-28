@@ -1,6 +1,6 @@
 # 示例项目
 
-这里放置 Codex Long Task Starter 生成结果的可读示例。
+这里放置 Codex 长任务启动器 / Codex Long Task Starter 生成结果的可读示例。
 
 ## simple-todo-app
 
