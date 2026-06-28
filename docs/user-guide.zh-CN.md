@@ -147,7 +147,7 @@ ProjectSpec 完整后，可以生成 7 个 Markdown 文件：
 
 ## 9. CLI 写入文件
 
-当前 `v0.1.0-alpha.0` 还没有发布到 npm。clone 仓库后，请先使用本地源码命令。
+当前 `v0.1.0-alpha.1` 还没有发布到 npm。clone 仓库后，请先使用本地源码命令。
 
 从 `project-spec.json` 写入当前目录：
 

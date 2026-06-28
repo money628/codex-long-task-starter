@@ -1,31 +1,27 @@
-# Codex Long Task Starter v0.1.0-alpha.0
+# Codex Long Task Starter v0.1.0-alpha.1
 
-Codex Long Task Starter `v0.1.0-alpha.0` is the first local-first alpha release.
-
-It helps users configure their own OpenAI-compatible API key, run an AI interview for project requirements, generate a validated `ProjectSpec`, export Codex/OpenCode-ready Markdown files, and write those files into a target project through the CLI.
+`v0.1.0-alpha.1` is a usability hardening release for real local trials.
 
 ## Highlights
 
-- Chinese Web UI for model configuration, project creation, AI interview, ProjectSpec preview, and Markdown export.
-- OpenAI-compatible provider presets: OpenAI, DeepSeek, Moonshot / Kimi, Qwen, OpenRouter, and custom providers.
-- Local proxy mode to reduce browser CORS issues.
-- JSON validation and repair for interview turns and ProjectSpec generation.
-- ProjectSpec completeness checks before final Markdown generation.
-- ZIP download and `project-spec.json` export.
-- CLI commands: `init`, `init-files`, `doctor`, and `run`.
-- Example outputs for a todo app and a Chrome extension.
-- Release verification script and GitHub Actions CI.
+- Better beginner-friendly interview flow: the Web UI now asks for the user's background and coding experience before starting the AI interview.
+- Interview answers can now include free-form user thoughts, and users can mark a question as "consider later" instead of being forced into a premature technical answer.
+- ProjectSpec generation now has a minimum alignment threshold to reduce thin reports generated after only one interview turn.
+- Markdown generation now falls back to local templates when the model or local proxy fails, so users can still edit, export, and continue.
+- Web JSON export uses the same redaction path as ZIP export.
+- CLI errors are now friendlier and do not expose Node stack traces for expected user mistakes.
+- Examples are now verified during release checks, and CLI tests confirm example ProjectSpecs can write the full 7-file task pack.
 
 ## Security
 
-- API keys are local-first and stored in the user's local browser environment.
-- API keys must not be included in Markdown files, ZIP exports, `ProjectSpec`, examples, logs, issues, screenshots, commits, or test snapshots.
-- If an API key has been shared in chat, screenshots, issues, logs, or commits, revoke it with the provider and create a new one.
-- See `SECURITY.md` for the full security policy.
+- API keys remain local-first.
+- API keys must not be exported to ProjectSpec, Markdown, ZIP files, examples, logs, screenshots, issues, or commits.
+- Release verification scans documentation, examples, tests, GitHub templates, and dev logs for leaked key patterns.
+- If a key was pasted into chat, screenshots, logs, or issues, revoke it immediately and create a new one.
 
 ## Validation
 
-The release candidate was checked with:
+Validated before release:
 
 ```bash
 pnpm install --frozen-lockfile=false
@@ -36,11 +32,8 @@ pnpm devlog
 node apps/cli/src/index.js doctor
 ```
 
-GitHub Actions CI passed on `main`.
-
 ## Known Limitations
 
-- Alpha release, intended for local use.
-- No login, cloud database, SaaS billing, team collaboration, template marketplace, Electron app, or Docker image.
-- npm alpha publishing has not been completed yet.
-- Real model quality should continue to be tested with more long-form project interviews.
+- npm alpha is not published yet; use local checkout commands for now.
+- DeepSeek interview quality still needs tuning: repeated questions and overly technical questions may appear in some flows.
+- This is still a local-first alpha, not a hosted SaaS or one-click desktop app.

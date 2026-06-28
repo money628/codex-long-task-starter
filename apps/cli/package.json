@@ -1,6 +1,6 @@
 {
   "name": "codex-long-task-starter",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "AI 访谈生成 Codex/OpenCode 长任务文件包，并安全写入当前项目目录的 CLI。",
   "type": "module",
   "bin": {

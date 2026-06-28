@@ -30,7 +30,7 @@ npm install -g pnpm
 
 ## 当前 CLI 用法
 
-当前 `v0.1.0-alpha.0` 尚未发布到 npm。clone 仓库后，请先使用本地源码命令：
+当前 `v0.1.0-alpha.1` 尚未发布到 npm。clone 仓库后，请先使用本地源码命令：
 
 ```bash
 node apps/cli/src/index.js doctor

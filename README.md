@@ -4,7 +4,7 @@
 
 Codex Long Task Starter 通过 Web UI 让你配置自己的 OpenAI-compatible API Key，由 AI 动态访谈项目需求，生成经过校验的 `ProjectSpec`，再导出可交给 Codex / OpenCode 执行的 Markdown 文件包，并提供 CLI 写入目标项目目录。
 
-当前版本：`v0.1.0-alpha.0`
+当前版本：`v0.1.0-alpha.1`
 
 English version: [README.en.md](README.en.md)
 
@@ -144,7 +144,7 @@ Request Mode: 本地代理
 
 ## CLI 使用方式
 
-当前 `v0.1.0-alpha.0` 还没有发布到 npm。clone 仓库后请先使用本地源码命令：
+当前 `v0.1.0-alpha.1` 还没有发布到 npm。clone 仓库后请先使用本地源码命令：
 
 从 `project-spec.json` 生成并写入当前目录：
 
@@ -225,7 +225,7 @@ node apps/cli/src/index.js doctor
 
 ## 已知限制
 
-- 当前是 `v0.1.0-alpha.0`，定位为本地使用的 alpha 版本。
+- 当前是 `v0.1.0-alpha.1`，定位为本地使用的 alpha 版本。
 - 暂不包含登录、云端数据库、付费、团队协作、模板市场、Electron 或 Docker。
 - npm alpha 尚未发布。
 - 真实模型长对话质量仍需更多复杂项目样例继续观察。
@@ -243,6 +243,7 @@ node apps/cli/src/index.js doctor
 - [英文发布说明](RELEASE_NOTES.md)
 - [发布检查清单](docs/release-checklist.md)
 - [下一阶段规划简报](docs/next-planning-brief.md)
+- [DeepSeek 访谈质量优化计划](docs/deepseek-interview-optimization.md)
 
 ## 许可证
 

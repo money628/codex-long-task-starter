@@ -70,7 +70,7 @@ export function readMarkdownFilesFromDir(sourceDir) {
 program
   .name("codex-long-task-starter")
   .description("AI 访谈生成的 Codex/OpenCode 长任务文件写入工具")
-  .version("0.1.0-alpha.0");
+  .version("0.1.0-alpha.1");
 
 program
   .command("init")

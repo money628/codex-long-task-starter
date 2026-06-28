@@ -15,6 +15,7 @@
 - `README.md`
 - `docs/user-guide.zh-CN.md`
 - `docs/MVP_CHECKLIST.md`
+- `docs/deepseek-interview-optimization.md`
 - `docs/requirements.md`
 - `docs/technical-spec.md`
 - `docs/development-process.md`

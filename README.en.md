@@ -6,7 +6,7 @@ Codex Long Task Starter helps you configure your own OpenAI-compatible API key, 
 
 中文说明见 [README.md](README.md)。
 
-Current version: `v0.1.0-alpha.0`
+Current version: `v0.1.0-alpha.1`
 
 ## Who It Is For
 
