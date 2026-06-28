@@ -44,6 +44,7 @@ async function assertNoSecretsInFile(relativePath) {
 async function assertCliDocsMatchPublishState() {
   const docs = [
     ["README.md", await readFile(path.join(root, "README.md"), "utf8")],
+    ["README.zh-CN.md", await readFile(path.join(root, "README.zh-CN.md"), "utf8")],
     ["docs/user-guide.zh-CN.md", await readFile(path.join(root, "docs/user-guide.zh-CN.md"), "utf8")]
   ];
   for (const [file, text] of docs) {
@@ -53,6 +54,10 @@ async function assertCliDocsMatchPublishState() {
     if (/npx\s+codex-long-task-starter(?!@alpha)/.test(text)) {
       throw new Error(`${file} uses an unpublished npx command. Use local CLI commands or @alpha examples only.`);
     }
+  }
+  const webSource = await readFile(path.join(root, "apps/web/src/main.jsx"), "utf8");
+  if (/npx\s+codex-long-task-starter(?!@alpha)/.test(webSource)) {
+    throw new Error("Web UI uses an unpublished npx command. Use local CLI commands until npm alpha is published.");
   }
 }
 

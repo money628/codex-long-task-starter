@@ -733,24 +733,49 @@ function ResultsPage({ projectSpec, markdownFiles, setMarkdownFiles }) {
     setMarkdownFiles({ ...files, [active]: value });
   }
   async function copy(text) {
-    await navigator.clipboard.writeText(text);
-    setExportStatus("已复制到剪贴板。");
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
+      setExportStatus("已复制到剪贴板。");
+    } catch {
+      setExportStatus("复制失败。请手动选中文本复制，或确认浏览器允许剪贴板权限。");
+    }
   }
   async function downloadZip() {
-    const zip = new JSZip();
-    Object.entries(createExportBundleEntries(projectSpec || createExampleSpec(), files)).forEach(([name, content]) =>
-      zip.file(name, content)
-    );
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    triggerDownload(url, `${projectSpec?.projectName || "codex-long-task-starter"}-files.zip`);
-    setExportStatus("已准备 ZIP 下载。");
+    try {
+      const zip = new JSZip();
+      Object.entries(createExportBundleEntries(projectSpec || createExampleSpec(), files)).forEach(([name, content]) =>
+        zip.file(name, content)
+      );
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, `${projectSpec?.projectName || "codex-long-task-starter"}-files.zip`);
+      setExportStatus("已准备 ZIP 下载。");
+    } catch {
+      setExportStatus("ZIP 下载失败。请稍后重试，或先使用“复制全部”保存当前 Markdown。");
+    }
   }
   function downloadSpecJson() {
-    downloadText("project-spec.json", JSON.stringify(projectSpec || createExampleSpec(), null, 2));
-    setExportStatus("已准备 project-spec.json 下载。");
+    try {
+      const entries = createExportBundleEntries(projectSpec || createExampleSpec(), files);
+      downloadText("project-spec.json", entries["project-spec.json"]);
+      setExportStatus("已准备 project-spec.json 下载。");
+    } catch {
+      setExportStatus("导出 project-spec.json 失败。请先检查 ProjectSpec 是否完整。");
+    }
   }
-  const cliCommand = "npx codex-long-task-starter init --spec ./project-spec.json";
+  const cliCommand = "node apps/cli/src/index.js init --spec ./project-spec.json";
   return (
     <div className="results-page">
       <div className="breadcrumb"><Folder size={26} /> 工作区 / 生成结果</div>

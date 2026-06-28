@@ -37,6 +37,8 @@
 - [x] 结果页“实时编辑 / 纯预览”只是装饰。
 - [x] OpenAI-compatible 服务不支持 `response_format` 时缺少降级。
 - [x] 误输入 `sk-...` 形式 Key 时，ProjectSpec、Markdown 和导出包会脱敏。
+- [x] 结果页 CLI 命令误写未发布 npm 的 `npx` 用法。
+- [x] Web `project-spec.json` 导出改走核心 bundle，避免绕过脱敏入口。
 
 ### 需要继续观察
 
