@@ -124,11 +124,11 @@ function toUserFacingError(error) {
 }
 
 const navItems = [
-  { label: "仪表盘", icon: Grid2X2 },
-  { label: "提示词探索", icon: FileText },
-  { label: "任务规划", icon: ClipboardList },
-  { label: "终端", icon: TerminalSquare },
-  { label: "历史记录", icon: History }
+  { label: "仪表盘", icon: Grid2X2, route: "home", description: "返回首页" },
+  { label: "提示词探索", icon: FileText, route: "interview", description: "继续 AI 访谈" },
+  { label: "任务规划", icon: ClipboardList, route: "create", description: "编辑项目草稿" },
+  { label: "终端", icon: TerminalSquare, route: "results", description: "查看 Markdown 结果" },
+  { label: "历史记录", icon: History, route: "spec", description: "查看 ProjectSpec" }
 ];
 
 const routes = {
@@ -270,7 +270,7 @@ function App() {
     <div className="app-shell">
       <TopNav route={route} go={setRoute} compact={route === "home"} />
       {notice && <div className="toast">{notice}</div>}
-      {route === "home" ? page : <Workspace route={route} projectName={projectDraft.projectName}>{page}</Workspace>}
+      {route === "home" ? page : <Workspace route={route} projectName={projectDraft.projectName} go={setRoute}>{page}</Workspace>}
       <RouteDock route={route} go={setRoute} />
     </div>
   );
@@ -298,7 +298,7 @@ function TopNav({ route, go, compact = false }) {
   );
 }
 
-function Workspace({ route, projectName, children }) {
+function Workspace({ route, projectName, children, go }) {
   const active = route === "config" ? "模型配置" : route === "results" ? "终端" : route === "interview" ? "提示词探索" : "任务规划";
   return (
     <main className="workspace">
@@ -312,17 +312,24 @@ function Workspace({ route, projectName, children }) {
         </div>
         <div className="side-nav">
           {navItems.map((item) => (
-            <button key={item.label} className={active === item.label ? "selected" : ""}>
+            <button
+              key={item.label}
+              className={active === item.label ? "selected" : ""}
+              onClick={() => go(item.route)}
+              title={item.description}
+            >
               <item.icon size={22} />
               <span>{item.label}</span>
             </button>
           ))}
-          {route === "config" && <button className="selected"><Settings size={22} /><span>模型配置</span></button>}
+          <button className={route === "config" ? "selected" : ""} onClick={() => go("config")} title="配置模型 API">
+            <Settings size={22} /><span>模型配置</span>
+          </button>
         </div>
         <div className="side-footer">
-          <button className="upgrade">升级计划</button>
-          <button><Settings size={22} />设置</button>
-          <button><CircleHelp size={22} />支持</button>
+          <button className="upgrade" onClick={() => go("create")}>新建项目</button>
+          <button onClick={() => go("config")}><Settings size={22} />设置</button>
+          <button onClick={() => window.open("https://github.com/money628/codex-long-task-starter/issues", "_blank", "noopener,noreferrer")}><CircleHelp size={22} />支持</button>
         </div>
       </aside>
       <section className="content">{children}</section>
@@ -570,6 +577,7 @@ function Switch({ label, detail, on, onClick }) {
 
 function InterviewPage({ turnResult, transcript, continueInterview, generateSpec, busy, isExampleMode }) {
   const [answers, setAnswers] = React.useState({});
+  const [localNotice, setLocalNotice] = React.useState("");
   React.useEffect(() => setAnswers({}), [turnResult]);
   const progress = Math.round((turnResult.confidenceScore || 0) * 100);
   const confirmed = Object.keys(turnResult.extractedFacts || {}).filter((key) => {
@@ -578,12 +586,26 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
   });
   const primaryQuestion = turnResult.questions[0];
   function setAnswer(id, value, multi) {
+    setLocalNotice("");
     setAnswers((prev) => {
       if (!multi) return { ...prev, [id]: value };
       const current = new Set(prev[id] || []);
       current.has(value) ? current.delete(value) : current.add(value);
       return { ...prev, [id]: [...current] };
     });
+  }
+  function answerIsFilled(question) {
+    const value = answers[question.id];
+    if (Array.isArray(value)) return value.length > 0;
+    return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
+  }
+  function submitAnswers() {
+    const missing = turnResult.questions.filter((question) => question.required && !answerIsFilled(question));
+    if (missing.length) {
+      setLocalNotice(`请先回答必填问题：${missing.map((question) => question.question).join("、")}`);
+      return;
+    }
+    continueInterview(answers);
   }
   return (
     <div className="interview-layout">
@@ -601,7 +623,7 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
         <section className="risk-note"><strong>{isExampleMode ? "示例模式" : "风险提示"}</strong><p>{turnResult.riskFlags.join(" / ") || "暂无风险提示"}</p></section>
       </aside>
       <section className="chat-panel panel">
-        <header><span className="round-icon"><Bot size={24} /></span><div><h1>{primaryQuestion?.question || "AI 访谈"}</h1><p>{turnResult.summary}</p></div><b>{isExampleMode ? "示例模式" : "AI 运行中"}</b></header>
+        <header><span className="round-icon"><Bot size={24} /></span><div><h1>{primaryQuestion?.question || "AI 访谈"}</h1><p>{turnResult.summary}</p></div><b>{isExampleMode ? "示例模式" : "真实 AI 访谈"}</b></header>
         <div className="question-card">
           <h2>{primaryQuestion?.question}</h2>
           <div className="why-box"><CircleHelp size={22} /><div><strong>为什么问这个？</strong><p>{primaryQuestion?.why}</p></div></div>
@@ -615,11 +637,13 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
                 {q.options.map((option) => <button className={(Array.isArray(answers[q.id]) ? answers[q.id].includes(option.label) : answers[q.id] === option.label) ? "picked" : ""} key={option.label} onClick={() => setAnswer(q.id, option.label, q.type === "multi")}>{option.label}<small>{option.description}</small></button>)}
               </div>}
               {q.type === "text" && <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value, false)} placeholder="请输入你的补充说明..." />}
+              {q.required && !answerIsFilled(q) && <small className="required-hint">必填</small>}
             </article>
           ))}
         </div>
+        {localNotice && <p className="inline-status error">{localNotice}</p>}
         <footer>
-          <button className="continue" onClick={() => continueInterview(answers)} disabled={Boolean(busy)}>继续访谈 <ArrowRight size={24} /></button>
+          <button className="continue" onClick={submitAnswers} disabled={Boolean(busy)}>继续访谈 <ArrowRight size={24} /></button>
           <button className={turnResult.isReadyToGenerateSpec || transcript.length >= 1 ? "continue" : "disabled"} onClick={generateSpec} disabled={Boolean(busy) || !(turnResult.isReadyToGenerateSpec || transcript.length >= 1)}><Sparkles size={20} /> 生成 ProjectSpec</button>
           <small>{busy || "每轮会校验 InterviewTurnResult JSON"}</small>
         </footer>
@@ -631,9 +655,23 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
 function SpecPreviewPage({ projectSpec, setProjectSpec, generateSpec, generateFiles, busy }) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState("");
+  const [activeSection, setActiveSection] = React.useState("核心功能");
   const spec = projectSpec || createExampleSpec();
   const completeness = getSpecCompleteness(spec);
   React.useEffect(() => setDraft(JSON.stringify(spec, null, 2)), [projectSpec]);
+  const outlineItems = [
+    ["项目目标", "goal"],
+    ["目标用户", "users"],
+    ["MVP 范围", "scope"],
+    ["非目标", "out"],
+    ["核心功能", "features"],
+    ["技术约束", "constraints"],
+    ["风险", "risks"]
+  ];
+  function jumpTo(label, id) {
+    setActiveSection(label);
+    document.getElementById(`spec-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   function saveDraft() {
     try {
       setProjectSpec(validateProjectSpec(JSON.parse(draft)));
@@ -647,7 +685,11 @@ function SpecPreviewPage({ projectSpec, setProjectSpec, generateSpec, generateFi
       <aside className="outline">
         <div className="project-chip"><span className="project-icon"><Sparkles size={24} /></span><div><strong>{spec.projectName}</strong><small>规格起草中</small></div></div>
         <span>大纲</span>
-        {["项目目标", "目标用户", "MVP 范围", "非目标", "核心功能", "技术约束", "风险"].map((x, i) => <button className={i === 4 ? "selected" : ""} key={x}><Zap size={18} />{x}</button>)}
+        {outlineItems.map(([label, id]) => (
+          <button className={activeSection === label ? "selected" : ""} key={label} onClick={() => jumpTo(label, id)}>
+            <Zap size={18} />{label}
+          </button>
+        ))}
         <button className="upgrade">完整度 {completeness.score}%</button>
       </aside>
       <section className="spec-content">
@@ -656,16 +698,19 @@ function SpecPreviewPage({ projectSpec, setProjectSpec, generateSpec, generateFi
         <p>结构化 ProjectSpec 已通过 Zod 校验，用于指导 AI 自动执行任务的核心蓝图。</p>
         <hr />
         {editing ? <textarea className="json-editor" value={draft} onChange={(e) => setDraft(e.target.value)} /> : <>
-          <article className="panel spec-goal">
+          <article className="panel spec-goal" id="spec-goal">
             <small>01. 项目目标</small>
             <p>{spec.coreGoal}</p>
             {spec.doneWhen.slice(0, 3).map((x) => <p key={x}><Check size={18} /> {x}</p>)}
           </article>
           <div className="spec-cards">
-            <article className="panel"><small>02. 目标用户</small><div className="chips">{spec.targetUsers.map((x) => <span key={x}>{x}</span>)}</div></article>
-            <article className="panel edge"><small>03. MVP 范围</small><p>{spec.mvpScope.join("、")}</p><div className="progress"><span style={{ width: `${completeness.score}%` }} /></div><b>就绪检查 <em>{completeness.missing.length ? `${completeness.missing.length} 项缺失` : "已满足"}</em></b></article>
+            <article className="panel" id="spec-users"><small>02. 目标用户</small><div className="chips">{spec.targetUsers.map((x) => <span key={x}>{x}</span>)}</div></article>
+            <article className="panel edge" id="spec-scope"><small>03. MVP 范围</small><p>{spec.mvpScope.join("、")}</p><div className="progress"><span style={{ width: `${completeness.score}%` }} /></div><b>就绪检查 <em>{completeness.missing.length ? `${completeness.missing.length} 项缺失` : "已满足"}</em></b></article>
           </div>
-          <article className="panel capability"><div><small>04. 核心功能</small>{spec.coreFeatures.slice(0, 4).map((x) => <React.Fragment key={x}><h3>{x}</h3><p>根据访谈与 ProjectSpec 生成。</p></React.Fragment>)}</div><div className="mini-terminal"><span>规格校验</span><p>$ 校验 project-spec.json</p><p>$ 完整度 {completeness.score}%</p><p>$ 缺失项 {completeness.missing.length}</p></div></article>
+          <article className="panel capability" id="spec-features"><div><small>04. 核心功能</small>{spec.coreFeatures.slice(0, 4).map((x) => <React.Fragment key={x}><h3>{x}</h3><p>根据访谈与 ProjectSpec 生成。</p></React.Fragment>)}</div><div className="mini-terminal"><span>规格校验</span><p>$ 校验 project-spec.json</p><p>$ 完整度 {completeness.score}%</p><p>$ 缺失项 {completeness.missing.length}</p></div></article>
+          <article className="panel spec-detail" id="spec-out"><small>05. 非目标</small><div className="chips">{spec.outOfScope.map((x) => <span key={x}>{x}</span>)}</div></article>
+          <article className="panel spec-detail" id="spec-constraints"><small>06. 技术约束</small><div className="chips">{spec.constraints.map((x) => <span key={x}>{x}</span>)}</div></article>
+          <article className="panel spec-detail" id="spec-risks"><small>07. 风险</small><div className="chips">{spec.risks.map((x) => <span key={x}>{x}</span>)}</div></article>
         </>}
       </section>
       <div className="floating-confirm">
@@ -682,12 +727,14 @@ function ResultsPage({ projectSpec, markdownFiles, setMarkdownFiles }) {
   const files = Object.keys(markdownFiles).length ? markdownFiles : generateMarkdownFilesFromSpec(projectSpec || createExampleSpec());
   const [active, setActive] = React.useState("Prompt.md");
   const [exportStatus, setExportStatus] = React.useState("");
+  const [mode, setMode] = React.useState("edit");
   const activeText = files[active] || "";
   function updateActive(value) {
     setMarkdownFiles({ ...files, [active]: value });
   }
   async function copy(text) {
     await navigator.clipboard.writeText(text);
+    setExportStatus("已复制到剪贴板。");
   }
   async function downloadZip() {
     const zip = new JSZip();
@@ -708,17 +755,20 @@ function ResultsPage({ projectSpec, markdownFiles, setMarkdownFiles }) {
     <div className="results-page">
       <div className="breadcrumb"><Folder size={26} /> 工作区 / 生成结果</div>
       <div className="page-title"><h1>生成结果预览</h1><p>基于 ProjectSpec 生成的 Codex/OpenCode 长任务文件包</p></div>
-      <div className="mode-toggle"><button><PenLine size={18} /> 实时编辑</button><button><Eye size={18} /> 纯预览</button></div>
+      <div className="mode-toggle">
+        <button className={mode === "edit" ? "active" : ""} onClick={() => setMode("edit")}><PenLine size={18} /> 实时编辑</button>
+        <button className={mode === "preview" ? "active" : ""} onClick={() => setMode("preview")}><Eye size={18} /> 纯预览</button>
+      </div>
       <div className="file-tabs">{markdownFileNames.map((t) => <button className={active === t ? "active" : ""} key={t} onClick={() => setActive(t)}>{t === "Prompt.md" ? <FileCode2 size={16} /> : <Braces size={16} />}{t}</button>)}</div>
       <section className="results-grid">
-        <article className="panel markdown-preview">
+        <article className={`panel markdown-preview ${mode === "preview" ? "wide-preview" : ""}`}>
           <header><Eye size={22} /> 预览 <b>已就绪</b></header>
           <div className="md-body"><pre>{activeText}</pre></div>
         </article>
-        <article className="panel source-editor">
+        {mode === "edit" && <article className="panel source-editor">
           <header><Code2 size={22} /> 源码编辑器 <span>UTF-8 Markdown</span></header>
           <textarea value={activeText} onChange={(e) => updateActive(e.target.value)} />
-        </article>
+        </article>}
       </section>
       <section className="export-bar">
         <div className="cli-copy"><TerminalSquare size={24} /><span>命令</span><code>{cliCommand}</code><button onClick={() => copy(cliCommand)}><Copy size={18} /> 一键复制</button></div>

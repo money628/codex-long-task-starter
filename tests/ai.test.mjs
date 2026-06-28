@@ -107,3 +107,34 @@ test("OpenAI-compatible 错误响应会保留 HTTP 状态和错误信息", async
     await mock.close();
   }
 });
+
+test("JSON response_format 不被兼容服务支持时会自动降级重试", async () => {
+  let count = 0;
+  const mock = await withMockOpenAI((req, res, body) => {
+    count += 1;
+    if (body.response_format) {
+      sendJson(res, 400, { error: { message: "response_format is not supported" } });
+      return;
+    }
+    sendJson(res, 200, { choices: [{ message: { content: "{\"ok\":true}" } }] });
+  });
+
+  try {
+    const content = await callOpenAICompatible(
+      {
+        baseUrl: mock.baseUrl,
+        apiKey: "sk-test-secret",
+        modelName: "test-model",
+        requestMode: "direct"
+      },
+      [{ role: "user", content: "ping" }]
+    );
+
+    assert.equal(content, "{\"ok\":true}");
+    assert.equal(count, 2);
+    assert.deepEqual(mock.requests[0].body.response_format, { type: "json_object" });
+    assert.equal(mock.requests[1].body.response_format, undefined);
+  } finally {
+    await mock.close();
+  }
+});

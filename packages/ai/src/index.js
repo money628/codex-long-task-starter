@@ -32,27 +32,44 @@ export async function callOpenAICompatible(config, messages, { json = true, sign
     response_format: json ? { type: "json_object" } : undefined
   };
   const url = shouldUseLocalProxy(config) ? "/api/chat-completions" : `${normalizeBaseUrl(config.baseUrl)}/chat/completions`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(shouldUseLocalProxy(config) ? {} : { Authorization: `Bearer ${config.apiKey}` })
-    },
-    body: JSON.stringify(
-      shouldUseLocalProxy(config)
-        ? { baseUrl: config.baseUrl, apiKey: config.apiKey, payload: requestBody }
-        : requestBody
-    ),
-    signal
-  });
-  if (!response.ok) {
+  async function send(body) {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(shouldUseLocalProxy(config) ? {} : { Authorization: `Bearer ${config.apiKey}` })
+      },
+      body: JSON.stringify(
+        shouldUseLocalProxy(config)
+          ? { baseUrl: config.baseUrl, apiKey: config.apiKey, payload: body }
+          : body
+      ),
+      signal
+    });
+  }
+  async function readError(response) {
     let detail = "";
     try {
       const payload = await response.json();
-      detail = payload?.error?.message || JSON.stringify(payload);
+      detail = payload?.error?.message || payload?.message || JSON.stringify(payload);
     } catch {
       detail = await response.text();
     }
+    return detail;
+  }
+  let response = await send(requestBody);
+  if (!response.ok && json) {
+    const detail = await readError(response);
+    if (/response_format|json_object|JSON mode/i.test(detail)) {
+      const fallbackBody = { ...requestBody };
+      delete fallbackBody.response_format;
+      response = await send(fallbackBody);
+    } else {
+      throw new Error(`模型请求失败：HTTP ${response.status}${detail ? ` - ${detail.slice(0, 260)}` : ""}`);
+    }
+  }
+  if (!response.ok) {
+    const detail = await readError(response);
     throw new Error(`模型请求失败：HTTP ${response.status}${detail ? ` - ${detail.slice(0, 260)}` : ""}`);
   }
   const data = await response.json();

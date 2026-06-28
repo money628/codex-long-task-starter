@@ -102,6 +102,8 @@ input, textarea { font: inherit; color: inherit; }
 .editable-input input { width: 100%; border: 0; outline: 0; background: transparent; color: #dce8fb; }
 .native-slider { width: 100%; accent-color: var(--primary); margin: 22px 0; }
 .inline-status { margin: 18px 0 0; color: var(--green); font-family: "JetBrains Mono"; }
+.inline-status.error { color: #ffb4b4; }
+.required-hint { display: inline-flex; align-self: flex-start; margin-top: 10px; border: 1px solid rgba(255, 120, 120, .35); border-radius: 999px; padding: 4px 10px; color: #ffb4b4; background: rgba(255, 120, 120, .08); font-size: 12px; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
 .slider-row label { display: flex; justify-content: space-between; font-family: "JetBrains Mono"; color: #cbd6ed; }
 .slider { height: 8px; margin: 26px 0; border-radius: 999px; background: #2b3d50; }
@@ -241,9 +243,11 @@ input, textarea { font: inherit; color: inherit; }
 .results-page .page-title h1 { font-size: 38px; }
 .mode-toggle { float: right; margin-top: -64px; display: flex; gap: 8px; padding: 8px; border-radius: 10px; background: #223246; }
 .mode-toggle button, .file-tabs button { display: inline-flex; align-items: center; gap: 8px; border-radius: 6px; background: transparent; padding: 12px 16px; }
+.mode-toggle button.active { background: linear-gradient(135deg, #7b2cff, #b22cff); color: white; }
 .file-tabs { display: flex; justify-content: space-between; margin: 28px 0; font-family: "JetBrains Mono"; }
 .file-tabs button.active { background: #2b3f59; box-shadow: inset 0 2px var(--primary); }
 .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.markdown-preview.wide-preview { grid-column: 1 / -1; }
 .markdown-preview, .source-editor { padding: 0; height: 650px; overflow: hidden; }
 .markdown-preview header, .source-editor header { height: 66px; display: flex; align-items: center; gap: 14px; padding: 0 24px; border-bottom: 1px solid var(--line); color: #aeb9cb; font-weight: 800; }
 .markdown-preview header b { margin-left: auto; border: 1px solid rgba(78,222,163,.35); border-radius: 999px; padding: 6px 12px; color: var(--green); font-size: 12px; }
