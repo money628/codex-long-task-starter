@@ -39,6 +39,7 @@
 - [x] 误输入 `sk-...` 形式 Key 时，ProjectSpec、Markdown 和导出包会脱敏。
 - [x] 结果页 CLI 命令误写未发布 npm 的 `npx` 用法。
 - [x] Web `project-spec.json` 导出改走核心 bundle，避免绕过脱敏入口。
+- [x] API 配置会清理 Base URL、API Key、Model Name 前后空格，避免复制粘贴导致连接失败。
 
 ### 需要继续观察
 

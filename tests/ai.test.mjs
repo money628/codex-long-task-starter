@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { callOpenAICompatible, testConnection } from "../packages/ai/src/index.js";
+import { callOpenAICompatible, hasUsableApiConfig, testConnection } from "../packages/ai/src/index.js";
 
 async function withMockOpenAI(handler) {
   const requests = [];
@@ -60,6 +60,33 @@ test("OpenAI-compatible 调用使用 chat/completions、Bearer Key 和 JSON resp
     assert.equal(mock.requests[0].body.temperature, 0.2);
     assert.equal(mock.requests[0].body.max_tokens, 123);
     assert.deepEqual(mock.requests[0].body.response_format, { type: "json_object" });
+  } finally {
+    await mock.close();
+  }
+});
+
+test("API 配置会清理前后空格，纯空白配置不可用", async () => {
+  assert.equal(hasUsableApiConfig({ baseUrl: "   ", apiKey: "   ", modelName: "   " }), false);
+
+  const mock = await withMockOpenAI((req, res) => {
+    sendJson(res, 200, { choices: [{ message: { content: "{\"ok\":true}" } }] });
+  });
+
+  try {
+    const content = await callOpenAICompatible(
+      {
+        baseUrl: ` ${mock.baseUrl}/ `,
+        apiKey: " sk-test-secret ",
+        modelName: " test-model ",
+        requestMode: "direct"
+      },
+      [{ role: "user", content: "ping" }]
+    );
+
+    assert.equal(content, "{\"ok\":true}");
+    assert.equal(mock.requests[0].url, "/v1/chat/completions");
+    assert.equal(mock.requests[0].authorization, "Bearer sk-test-secret");
+    assert.equal(mock.requests[0].body.model, "test-model");
   } finally {
     await mock.close();
   }

@@ -12,8 +12,18 @@ function normalizeBaseUrl(baseUrl) {
   return String(baseUrl || "").replace(/\/+$/, "");
 }
 
+function normalizeApiConfig(config = {}) {
+  return {
+    ...config,
+    baseUrl: normalizeBaseUrl(String(config.baseUrl || "").trim()),
+    apiKey: String(config.apiKey || "").trim(),
+    modelName: String(config.modelName || "").trim()
+  };
+}
+
 export function hasUsableApiConfig(config) {
-  return Boolean(config?.baseUrl && config?.apiKey && config?.modelName);
+  const normalized = normalizeApiConfig(config);
+  return Boolean(normalized.baseUrl && normalized.apiKey && normalized.modelName);
 }
 
 function shouldUseLocalProxy(config) {
@@ -21,27 +31,29 @@ function shouldUseLocalProxy(config) {
 }
 
 export async function callOpenAICompatible(config, messages, { json = true, signal } = {}) {
-  if (!hasUsableApiConfig(config)) {
+  const normalizedConfig = normalizeApiConfig(config);
+  if (!hasUsableApiConfig(normalizedConfig)) {
     throw new Error("请先在模型配置页填写 Base URL、API Key 和 Model Name。");
   }
   const requestBody = {
-    model: config.modelName,
-    temperature: Number(config.temperature ?? 0.7),
-    max_tokens: Number(config.maxTokens ?? 4096),
+    model: normalizedConfig.modelName,
+    temperature: Number(normalizedConfig.temperature ?? 0.7),
+    max_tokens: Number(normalizedConfig.maxTokens ?? 4096),
     messages,
     response_format: json ? { type: "json_object" } : undefined
   };
-  const url = shouldUseLocalProxy(config) ? "/api/chat-completions" : `${normalizeBaseUrl(config.baseUrl)}/chat/completions`;
+  const useLocalProxy = shouldUseLocalProxy(normalizedConfig);
+  const url = useLocalProxy ? "/api/chat-completions" : `${normalizedConfig.baseUrl}/chat/completions`;
   async function send(body) {
     return fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(shouldUseLocalProxy(config) ? {} : { Authorization: `Bearer ${config.apiKey}` })
+        ...(useLocalProxy ? {} : { Authorization: `Bearer ${normalizedConfig.apiKey}` })
       },
       body: JSON.stringify(
-        shouldUseLocalProxy(config)
-          ? { baseUrl: config.baseUrl, apiKey: config.apiKey, payload: body }
+        useLocalProxy
+          ? { baseUrl: normalizedConfig.baseUrl, apiKey: normalizedConfig.apiKey, payload: body }
           : body
       ),
       signal
