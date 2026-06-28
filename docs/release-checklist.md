@@ -6,7 +6,9 @@ This checklist is for preparing `v0.1.0-alpha` open source releases.
 
 - [ ] Confirm the working tree only contains intended changes.
 - [ ] Confirm `README.md` explains the project, Web flow, CLI flow, API configuration, examples, FAQ, and security notes.
+- [ ] Confirm `README.zh-CN.md` exists and is suitable for Chinese developers.
 - [ ] Confirm `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, and `CHANGELOG.md` exist.
+- [ ] Confirm `RELEASE_NOTES.md` and `RELEASE_NOTES.zh-CN.md` exist.
 - [ ] Confirm `.github/ISSUE_TEMPLATE/` and `.github/pull_request_template.md` exist.
 - [ ] Confirm `docs/github-release.md` has the repository description, topics, and release notes draft.
 - [ ] Confirm `examples/` contains realistic generated files and no secrets.

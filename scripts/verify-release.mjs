@@ -4,7 +4,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 const root = process.cwd();
-const secretPattern = /sk-[A-Za-z0-9_-]+|apiKey\s*[:=]/i;
+const secretPattern = /sk-[A-Za-z0-9_-]{16,}|apiKey\s*[:=]/i;
 
 async function assertExists(relativePath) {
   await stat(path.join(root, relativePath)).catch(() => {
@@ -34,6 +34,11 @@ async function assertNoSecretsInDir(relativeDir) {
       if (secretPattern.test(text)) throw new Error(`疑似密钥进入发布文件：${rel}`);
     }
   }
+}
+
+async function assertNoSecretsInFile(relativePath) {
+  const text = await readFile(path.join(root, relativePath), "utf8");
+  if (secretPattern.test(text)) throw new Error(`疑似密钥进入发布文件：${relativePath}`);
 }
 
 function quoteWinArg(value) {
@@ -104,10 +109,13 @@ function runCommandLine(label, commandLine, cwd = root) {
 
 async function main() {
   await assertExists("README.md");
+  await assertExists("README.zh-CN.md");
   await assertExists("LICENSE");
   await assertExists("CONTRIBUTING.md");
   await assertExists("SECURITY.md");
   await assertExists("CHANGELOG.md");
+  await assertExists("RELEASE_NOTES.md");
+  await assertExists("RELEASE_NOTES.zh-CN.md");
   await assertExists("docs/release-checklist.md");
   await assertExists("docs/github-release.md");
   await assertExists(".github/workflows/ci.yml");
@@ -117,6 +125,21 @@ async function main() {
   assertPackageMetadata("@codex-starter/core", await readJson("packages/core/package.json"));
   assertPackageMetadata("codex-long-task-starter", await readJson("apps/cli/package.json"));
   await assertNoSecretsInDir("examples");
+  await assertNoSecretsInDir("docs");
+  await assertNoSecretsInDir("dev-logs");
+  await assertNoSecretsInDir("tests");
+  await assertNoSecretsInDir(".github");
+  for (const file of [
+    "README.md",
+    "README.zh-CN.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "RELEASE_NOTES.md",
+    "RELEASE_NOTES.zh-CN.md",
+    "CONTRIBUTING.md"
+  ]) {
+    await assertNoSecretsInFile(file);
+  }
 
   const workspace = await mkdtemp(path.join(tmpdir(), "clts-release-"));
   const packDir = path.join(workspace, "pack");
