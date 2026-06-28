@@ -10,6 +10,14 @@
 - pnpm
 - 一个 OpenAI-compatible 模型服务的 API Key
 
+如果终端提示没有 pnpm，可以先安装：
+
+```bash
+npm install -g pnpm
+```
+
+如果你的 Node.js 自带 Corepack，也可以运行 `corepack enable`。
+
 推荐先使用本地代理模式，不要一开始就用浏览器直连。
 
 ## 2. 启动项目
@@ -139,28 +147,36 @@ ProjectSpec 完整后，可以生成 7 个 Markdown 文件：
 
 ## 9. CLI 写入文件
 
+当前 `v0.1.0-alpha.0` 还没有发布到 npm。clone 仓库后，请先使用本地源码命令。
+
 从 `project-spec.json` 写入当前目录：
 
 ```bash
-npx codex-long-task-starter init --spec ./project-spec.json
+node apps/cli/src/index.js init --spec ./project-spec.json
 ```
 
 从已有 Markdown 文件目录写入当前目录：
 
 ```bash
-npx codex-long-task-starter init-files ./generated
+node apps/cli/src/index.js init-files ./generated
 ```
 
 检查当前目录：
 
 ```bash
-npx codex-long-task-starter doctor
+node apps/cli/src/index.js doctor
 ```
 
 检测 `START.md` 并提示下一步：
 
 ```bash
-npx codex-long-task-starter run
+node apps/cli/src/index.js run
+```
+
+npm alpha 发布后，才使用：
+
+```bash
+npx codex-long-task-starter@alpha doctor
 ```
 
 CLI 默认只写当前目录，覆盖已有文件前会询问。
