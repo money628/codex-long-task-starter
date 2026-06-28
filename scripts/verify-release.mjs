@@ -109,7 +109,9 @@ function runCommandLine(label, commandLine, cwd = root) {
 
 async function main() {
   await assertExists("README.md");
+  await assertExists("README.en.md");
   await assertExists("README.zh-CN.md");
+  await assertExists("docs/user-guide.zh-CN.md");
   await assertExists("LICENSE");
   await assertExists("CONTRIBUTING.md");
   await assertExists("SECURITY.md");
@@ -131,6 +133,7 @@ async function main() {
   await assertNoSecretsInDir(".github");
   for (const file of [
     "README.md",
+    "README.en.md",
     "README.zh-CN.md",
     "SECURITY.md",
     "CHANGELOG.md",
