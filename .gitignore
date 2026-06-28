@@ -17,6 +17,7 @@ test-results/
 outputs/
 tech-explain-translator/
 副业执行系统启动包/
+start-web.cmd
 
 .DS_Store
 Thumbs.db
