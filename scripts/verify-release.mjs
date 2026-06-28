@@ -41,6 +41,21 @@ async function assertNoSecretsInFile(relativePath) {
   if (secretPattern.test(text)) throw new Error(`疑似密钥进入发布文件：${relativePath}`);
 }
 
+async function assertCliDocsMatchPublishState() {
+  const docs = [
+    ["README.md", await readFile(path.join(root, "README.md"), "utf8")],
+    ["docs/user-guide.zh-CN.md", await readFile(path.join(root, "docs/user-guide.zh-CN.md"), "utf8")]
+  ];
+  for (const [file, text] of docs) {
+    if (!text.includes("node apps/cli/src/index.js doctor")) {
+      throw new Error(`${file} must document the local CLI command before npm alpha is published.`);
+    }
+    if (/npx\s+codex-long-task-starter(?!@alpha)/.test(text)) {
+      throw new Error(`${file} uses an unpublished npx command. Use local CLI commands or @alpha examples only.`);
+    }
+  }
+}
+
 function quoteWinArg(value) {
   const text = String(value);
   if (!/[\s&()^|<>"]/.test(text)) return text;
@@ -147,6 +162,7 @@ async function main() {
   ]) {
     await assertNoSecretsInFile(file);
   }
+  await assertCliDocsMatchPublishState();
 
   const workspace = await mkdtemp(path.join(tmpdir(), "clts-release-"));
   const packDir = path.join(workspace, "pack");
