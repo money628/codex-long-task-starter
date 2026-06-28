@@ -18,6 +18,7 @@ outputs/
 tech-explain-translator/
 副业执行系统启动包/
 start-web.cmd
+open-web-when-ready.cmd
 
 .DS_Store
 Thumbs.db
