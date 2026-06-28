@@ -3,8 +3,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { cwdPath, readMarkdownFilesFromDir, writeFiles } from "../apps/cli/src/index.js";
 import { markdownFileNames } from "../packages/core/src/index.js";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const cliPath = path.join(repoRoot, "apps/cli/src/index.js");
 
 test("CLI 安全路径拒绝当前目录外写入", () => {
   const original = process.cwd();
@@ -43,6 +48,24 @@ test("CLI init-files 在目录没有任务文件时给出明确错误", () => {
       () => readMarkdownFilesFromDir(tmp),
       /未在目录中找到任务文件/
     );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("CLI 命令失败时输出友好错误而不是堆栈", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "clts-cli-error-"));
+  const empty = path.join(tmp, "empty");
+  fs.mkdirSync(empty);
+  try {
+    const result = spawnSync(process.execPath, [cliPath, "init-files", empty], {
+      cwd: tmp,
+      encoding: "utf8"
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /错误：/);
+    assert.match(result.stderr, /未在目录中找到任务文件/);
+    assert.doesNotMatch(result.stderr, /\\n\\s+at\\s/);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

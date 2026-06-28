@@ -135,6 +135,15 @@ program
     }
   });
 
+export async function runCli(argv = process.argv) {
+  try {
+    await program.parseAsync(argv);
+  } catch (error) {
+    console.error(chalk.red(`错误：${error?.message || error}`));
+    process.exitCode = 1;
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  program.parseAsync(process.argv);
+  runCli(process.argv);
 }

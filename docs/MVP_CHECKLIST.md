@@ -41,6 +41,7 @@
 - [x] Web `project-spec.json` 导出改走核心 bundle，避免绕过脱敏入口。
 - [x] API 配置会清理 Base URL、API Key、Model Name 前后空格，避免复制粘贴导致连接失败。
 - [x] CLI `init-files` 在目录没有任务文件时会给出明确错误，不再假装处理成功。
+- [x] CLI 命令失败时输出友好中文错误，不再默认暴露 Node 堆栈。
 
 ### 需要继续观察
 
