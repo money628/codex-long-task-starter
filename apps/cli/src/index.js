@@ -55,6 +55,18 @@ export async function writeFiles(files) {
   return result;
 }
 
+export function readMarkdownFilesFromDir(sourceDir) {
+  const files = {};
+  for (const name of markdownFileNames) {
+    const source = path.join(sourceDir, name);
+    if (fs.existsSync(source)) files[name] = fs.readFileSync(source, "utf8");
+  }
+  if (!Object.keys(files).length) {
+    throw new Error(`未在目录中找到任务文件：${sourceDir}。请确认该目录包含 Prompt.md、Plan.md、START.md 等生成文件。`);
+  }
+  return files;
+}
+
 program
   .name("codex-long-task-starter")
   .description("AI 访谈生成的 Codex/OpenCode 长任务文件写入工具")
@@ -80,11 +92,7 @@ program
   .argument("<dir>", "包含 Markdown 文件的目录")
   .action(async (dir) => {
     const sourceDir = path.resolve(process.cwd(), dir);
-    const files = {};
-    for (const name of markdownFileNames) {
-      const source = path.join(sourceDir, name);
-      if (fs.existsSync(source)) files[name] = fs.readFileSync(source, "utf8");
-    }
+    const files = readMarkdownFilesFromDir(sourceDir);
     const result = await writeFiles(files);
     console.log(chalk.green("已处理 Markdown 文件："));
     console.table(result);
