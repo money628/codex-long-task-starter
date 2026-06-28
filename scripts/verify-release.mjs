@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { markdownFileNames, validateProjectSpec } from "../packages/core/src/index.js";
 
 const root = process.cwd();
 const secretPattern = /sk-[A-Za-z0-9_-]{16,}|apiKey\s*[:=]/i;
@@ -58,6 +59,18 @@ async function assertCliDocsMatchPublishState() {
   const webSource = await readFile(path.join(root, "apps/web/src/main.jsx"), "utf8");
   if (/npx\s+codex-long-task-starter(?!@alpha)/.test(webSource)) {
     throw new Error("Web UI uses an unpublished npx command. Use local CLI commands until npm alpha is published.");
+  }
+}
+
+async function assertExamplesAreUsable() {
+  for (const dir of ["examples/simple-todo-app", "examples/chrome-extension"]) {
+    const spec = validateProjectSpec(await readJson(`${dir}/project-spec.json`));
+    if (!spec.projectName) throw new Error(`${dir}/project-spec.json 缺少项目名称`);
+    for (const name of markdownFileNames) {
+      await assertExists(`${dir}/${name}`);
+      const content = await readFile(path.join(root, dir, name), "utf8");
+      if (!content.trim()) throw new Error(`${dir}/${name} 不能为空`);
+    }
   }
 }
 
@@ -168,6 +181,7 @@ async function main() {
     await assertNoSecretsInFile(file);
   }
   await assertCliDocsMatchPublishState();
+  await assertExamplesAreUsable();
 
   const workspace = await mkdtemp(path.join(tmpdir(), "clts-release-"));
   const packDir = path.join(workspace, "pack");

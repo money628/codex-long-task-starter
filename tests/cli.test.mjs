@@ -70,3 +70,22 @@ test("CLI 命令失败时输出友好错误而不是堆栈", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test("CLI init 能从示例 project-spec.json 写入 7 个任务文件", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "clts-cli-example-"));
+  const specPath = path.join(repoRoot, "examples/simple-todo-app/project-spec.json");
+  try {
+    const result = spawnSync(process.execPath, [cliPath, "init", "--spec", specPath], {
+      cwd: tmp,
+      encoding: "utf8"
+    });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    for (const name of markdownFileNames) {
+      const target = path.join(tmp, name);
+      assert.equal(fs.existsSync(target), true, `${name} should be written`);
+      assert.ok(fs.readFileSync(target, "utf8").trim().length > 20);
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
