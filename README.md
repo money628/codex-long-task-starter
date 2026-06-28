@@ -218,6 +218,8 @@ node apps/cli/src/index.js doctor
 
 - [中文使用手册](docs/user-guide.zh-CN.md)
 - [英文 README](README.en.md)
+- [MVP 检查清单](docs/MVP_CHECKLIST.md)
+- [Agent 工作规则](AGENTS.md)
 - [贡献指南](CONTRIBUTING.md)
 - [安全政策](SECURITY.md)
 - [版本记录](CHANGELOG.md)

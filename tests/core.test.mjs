@@ -7,6 +7,7 @@ import {
   getSpecCompleteness,
   markdownFileNames,
   parseJsonObject,
+  redactSecrets,
   validateProjectSpec
 } from "../packages/core/src/index.js";
 
@@ -47,6 +48,30 @@ test("导出包条目包含 7 个 Markdown 和 project-spec.json 且不泄露 Ke
   assert.doesNotMatch(combined, /sk-[A-Za-z0-9]/);
   assert.doesNotMatch(combined, /real-secret-key-material/);
   assert.equal(JSON.parse(entries["project-spec.json"]).projectName, "Export Project");
+});
+
+test("ProjectSpec、Markdown 和导出包会脱敏误输入的 API Key", () => {
+  const leaked = `sk-${"abcdefghijklmnopqrstuvwxyz123456"}`;
+  const spec = validateProjectSpec({
+    ...createExampleSpec(),
+    projectName: "泄露测试",
+    oneLineIdea: `用户误把 Key 写进描述 ${leaked}`,
+    constraints: [`不要泄露 ${leaked}`],
+    acceptanceCriteria: [`输出中不能包含 ${leaked}`]
+  });
+
+  assert.equal(JSON.stringify(spec).includes(leaked), false);
+  assert.equal(JSON.stringify(spec).includes("sk-***REDACTED***"), true);
+
+  const files = generateMarkdownFilesFromSpec(spec);
+  assert.equal(JSON.stringify(files).includes(leaked), false);
+
+  const bundle = createExportBundleEntries(spec, {
+    ...files,
+    "Prompt.md": `手动编辑时误加入 ${leaked}`
+  });
+  assert.equal(JSON.stringify(bundle).includes(leaked), false);
+  assert.equal(JSON.stringify(redactSecrets(`token ${leaked}`)).includes(leaked), false);
 });
 
 test("parseJsonObject 支持 fenced JSON 和前后噪声", () => {

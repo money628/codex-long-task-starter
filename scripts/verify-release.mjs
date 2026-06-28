@@ -111,7 +111,10 @@ async function main() {
   await assertExists("README.md");
   await assertExists("README.en.md");
   await assertExists("README.zh-CN.md");
+  await assertExists("AGENTS.md");
   await assertExists("docs/user-guide.zh-CN.md");
+  await assertExists("docs/MVP_CHECKLIST.md");
+  await assertExists("examples/README.md");
   await assertExists("LICENSE");
   await assertExists("CONTRIBUTING.md");
   await assertExists("SECURITY.md");
@@ -135,6 +138,7 @@ async function main() {
     "README.md",
     "README.en.md",
     "README.zh-CN.md",
+    "AGENTS.md",
     "SECURITY.md",
     "CHANGELOG.md",
     "RELEASE_NOTES.md",

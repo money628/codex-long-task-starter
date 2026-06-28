@@ -89,6 +89,17 @@ export const markdownFileNames = [
   "START.md"
 ];
 
+const secretValuePattern = /sk-[A-Za-z0-9_-]{16,}/g;
+
+export function redactSecrets(value) {
+  if (typeof value === "string") return value.replace(secretValuePattern, "sk-***REDACTED***");
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, redactSecrets(item)]));
+  }
+  return value;
+}
+
 export function parseJsonObject(raw) {
   const text = String(raw || "").trim();
   try {
@@ -164,7 +175,7 @@ export function normalizeProjectSpecInput(value) {
 }
 
 export function validateProjectSpec(value) {
-  return ProjectSpecSchema.parse(normalizeProjectSpecInput(value));
+  return redactSecrets(ProjectSpecSchema.parse(normalizeProjectSpecInput(value)));
 }
 
 export function getSpecCompleteness(specLike) {
@@ -196,7 +207,7 @@ function section(title, body) {
 }
 
 export function generateMarkdownFilesFromSpec(input) {
-  const spec = validateProjectSpec(input);
+  const spec = validateProjectSpec(redactSecrets(input));
   const milestones = spec.milestones.length
     ? spec.milestones
         .map(
@@ -218,8 +229,8 @@ export function generateMarkdownFilesFromSpec(input) {
 }
 
 export function createExportBundleEntries(specInput, markdownFiles = {}) {
-  const spec = validateProjectSpec(specInput);
-  const files = Object.keys(markdownFiles).length ? markdownFiles : generateMarkdownFilesFromSpec(spec);
+  const spec = validateProjectSpec(redactSecrets(specInput));
+  const files = redactSecrets(Object.keys(markdownFiles).length ? markdownFiles : generateMarkdownFilesFromSpec(spec));
   const entries = {};
   for (const name of markdownFileNames) {
     entries[name] = typeof files[name] === "string" ? files[name] : "";
