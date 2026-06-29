@@ -98,6 +98,17 @@ const defaultProjectDraft = {
   specialRequirements: "不保存 API Key 到服务器，不把 Key 写入 Markdown。"
 };
 
+function createNewProjectDraft() {
+  return {
+    ...defaultProjectDraft,
+    projectName: "",
+    oneLineIdea: "",
+    userBackground: "",
+    techStackPreference: [],
+    specialRequirements: ""
+  };
+}
+
 function toUserFacingError(error) {
   const message = String(error?.message || error || "");
   if (!message) return "操作失败，请稍后重试。";
@@ -185,6 +196,7 @@ function App() {
   const [markdownFiles, setMarkdownFiles] = React.useState(() => loadJson(LS_KEYS.files, {}));
   const [busy, setBusy] = React.useState("");
   const [notice, setNotice] = React.useState("");
+  const interviewRunIdRef = React.useRef(0);
 
   React.useEffect(() => saveJson(LS_KEYS.api, apiConfig), [apiConfig]);
   React.useEffect(() => saveJson(LS_KEYS.draft, projectDraft), [projectDraft]);
@@ -192,25 +204,58 @@ function App() {
   React.useEffect(() => saveJson(LS_KEYS.turn, turnResult), [turnResult]);
   React.useEffect(() => {
     if (projectSpec) saveJson(LS_KEYS.spec, projectSpec);
+    else localStorage.removeItem(LS_KEYS.spec);
   }, [projectSpec]);
   React.useEffect(() => saveJson(LS_KEYS.files, markdownFiles), [markdownFiles]);
 
   const context = { projectDraft, transcript, draftSpec: projectSpec || {} };
   const isExampleMode = !hasUsableApiConfig(apiConfig);
 
+  function resetProjectArtifacts(nextDraft = projectDraft) {
+    interviewRunIdRef.current += 1;
+    setTranscript([]);
+    setTurnResult(createExampleInterviewTurn({ projectDraft: nextDraft }));
+    setProjectSpec(null);
+    setMarkdownFiles({});
+    localStorage.removeItem(LS_KEYS.transcript);
+    localStorage.removeItem(LS_KEYS.turn);
+    localStorage.removeItem(LS_KEYS.spec);
+    localStorage.removeItem(LS_KEYS.files);
+  }
+
+  function beginNewProject() {
+    const nextDraft = createNewProjectDraft();
+    setNotice("");
+    setBusy("");
+    setProjectDraft(nextDraft);
+    resetProjectArtifacts(nextDraft);
+    setRoute("create");
+  }
+
   async function startInterview() {
+    const runId = interviewRunIdRef.current + 1;
+    interviewRunIdRef.current = runId;
+    const interviewDraft = { ...projectDraft };
+    setTranscript([]);
+    setProjectSpec(null);
+    setMarkdownFiles({});
+    localStorage.removeItem(LS_KEYS.transcript);
+    localStorage.removeItem(LS_KEYS.spec);
+    localStorage.removeItem(LS_KEYS.files);
     setBusy("正在生成访谈问题...");
     setNotice("");
     try {
-      const turn = await runInterviewTurn(apiConfig, { projectDraft, transcript: [] });
+      const turn = await runInterviewTurn(apiConfig, { projectDraft: interviewDraft, transcript: [], draftSpec: {} });
+      if (runId !== interviewRunIdRef.current) return;
       setTranscript([]);
       setTurnResult(turn);
       setRoute("interview");
     } catch (error) {
+      if (runId !== interviewRunIdRef.current) return;
       setNotice(toUserFacingError(error));
       setRoute("config");
     } finally {
-      setBusy("");
+      if (runId === interviewRunIdRef.current) setBusy("");
     }
   }
 
@@ -267,7 +312,7 @@ function App() {
   }
 
   const page = {
-    home: <HomePage go={setRoute} startInterview={startInterview} />,
+    home: <HomePage go={setRoute} beginNewProject={beginNewProject} startInterview={startInterview} />,
     config: <ConfigPage apiConfig={apiConfig} setApiConfig={setApiConfig} notice={notice} setNotice={setNotice} busy={busy} setBusy={setBusy} />,
     create: <CreateProjectPage projectDraft={projectDraft} setProjectDraft={setProjectDraft} startInterview={startInterview} busy={busy} />,
     interview: <InterviewPage turnResult={turnResult} transcript={transcript} continueInterview={continueInterview} generateSpec={generateSpec} busy={busy} isExampleMode={isExampleMode} />,
@@ -277,15 +322,15 @@ function App() {
 
   return (
     <div className="app-shell">
-      <TopNav route={route} go={setRoute} compact={route === "home"} />
+      <TopNav route={route} go={setRoute} beginNewProject={beginNewProject} compact={route === "home"} />
       {notice && <div className="toast">{notice}</div>}
-      {route === "home" ? page : <Workspace route={route} projectName={projectDraft.projectName} go={setRoute}>{page}</Workspace>}
+      {route === "home" ? page : <Workspace route={route} projectName={projectDraft.projectName} go={setRoute} beginNewProject={beginNewProject}>{page}</Workspace>}
       <RouteDock route={route} go={setRoute} />
     </div>
   );
 }
 
-function TopNav({ route, go, compact = false }) {
+function TopNav({ route, go, beginNewProject, compact = false }) {
   return (
     <header className={`top-nav ${compact ? "top-nav--compact" : ""}`}>
       <button className="brand" onClick={() => go("home")}>
@@ -300,14 +345,14 @@ function TopNav({ route, go, compact = false }) {
       <div className="top-actions">
         <button className="icon-button"><Settings size={21} /></button>
         <button className="icon-button"><CircleHelp size={21} /></button>
-        <button className="soft-button" onClick={() => go("create")}>新建项目</button>
+        <button className="soft-button" onClick={beginNewProject}>新建项目</button>
         <span className="avatar" />
       </div>
     </header>
   );
 }
 
-function Workspace({ route, projectName, children, go }) {
+function Workspace({ route, projectName, children, go, beginNewProject }) {
   const active = route === "config" ? "模型配置" : route === "results" ? "终端" : route === "interview" ? "提示词探索" : "任务规划";
   return (
     <main className="workspace">
@@ -336,7 +381,7 @@ function Workspace({ route, projectName, children, go }) {
           </button>
         </div>
         <div className="side-footer">
-          <button className="upgrade" onClick={() => go("create")}>新建项目</button>
+          <button className="upgrade" onClick={beginNewProject}>新建项目</button>
           <button onClick={() => go("config")}><Settings size={22} />设置</button>
           <button onClick={() => window.open("https://github.com/money628/codex-long-task-starter/issues", "_blank", "noopener,noreferrer")}><CircleHelp size={22} />支持</button>
         </div>
@@ -346,7 +391,7 @@ function Workspace({ route, projectName, children, go }) {
   );
 }
 
-function HomePage({ go, startInterview }) {
+function HomePage({ go, beginNewProject, startInterview }) {
   const cards = [
     ["STEP 01", "深度访谈", "AI 访谈官通过多轮问答，挖掘需求细节，消除业务逻辑中的模糊断点。", Bot],
     ["STEP 02", "生成规格", "自动整理访谈记录，输出符合 ProjectSpec 标准的结构化技术文档。", FileText],
@@ -359,7 +404,7 @@ function HomePage({ go, startInterview }) {
         <h1>从模糊想法到结构化<br /><span>ProjectSpec</span></h1>
         <p>让 AI 先采访你，再把模糊项目想法变成 Codex/OpenCode 能长期执行的项目文件包。</p>
         <div className="hero-actions">
-          <button className="primary-xl" onClick={() => go("create")}>立即开始访谈</button>
+          <button className="primary-xl" onClick={beginNewProject}>立即开始访谈</button>
           <button className="ghost-xl" onClick={startInterview}>体验示例流程</button>
         </div>
         <small className="scroll-hint">向下探索<br />⌄</small>
