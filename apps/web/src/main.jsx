@@ -64,7 +64,9 @@ const LS_KEYS = {
   transcript: "clts.transcript",
   turn: "clts.turnResult",
   spec: "clts.projectSpec",
-  files: "clts.markdownFiles"
+  files: "clts.markdownFiles",
+  projectId: "clts.projectId",
+  history: "clts.projectHistory"
 };
 
 const defaultApiConfig = {
@@ -145,7 +147,7 @@ const navItems = [
   { label: "提示词探索", icon: FileText, route: "interview", description: "继续 AI 访谈" },
   { label: "任务规划", icon: ClipboardList, route: "create", description: "编辑项目草稿" },
   { label: "终端", icon: TerminalSquare, route: "results", description: "查看 Markdown 结果" },
-  { label: "历史记录", icon: History, route: "spec", description: "查看 ProjectSpec" }
+  { label: "历史记录", icon: History, route: "history", description: "查看本地项目历史" }
 ];
 
 const routes = {
@@ -153,6 +155,7 @@ const routes = {
   config: "模型配置",
   create: "创建项目",
   interview: "AI 访谈",
+  history: "历史记录",
   spec: "ProjectSpec",
   results: "Markdown 结果"
 };
@@ -194,6 +197,8 @@ function App() {
   const [turnResult, setTurnResult] = React.useState(() => loadJson(LS_KEYS.turn, createExampleInterviewTurn({ projectDraft: defaultProjectDraft })));
   const [projectSpec, setProjectSpec] = React.useState(() => loadJson(LS_KEYS.spec, null));
   const [markdownFiles, setMarkdownFiles] = React.useState(() => loadJson(LS_KEYS.files, {}));
+  const [projectId, setProjectId] = React.useState(() => localStorage.getItem(LS_KEYS.projectId) || crypto.randomUUID());
+  const [historyItems, setHistoryItems] = React.useState(() => loadJson(LS_KEYS.history, []));
   const [busy, setBusy] = React.useState("");
   const [notice, setNotice] = React.useState("");
   const interviewRunIdRef = React.useRef(0);
@@ -202,14 +207,67 @@ function App() {
   React.useEffect(() => saveJson(LS_KEYS.draft, projectDraft), [projectDraft]);
   React.useEffect(() => saveJson(LS_KEYS.transcript, transcript), [transcript]);
   React.useEffect(() => saveJson(LS_KEYS.turn, turnResult), [turnResult]);
+  React.useEffect(() => localStorage.setItem(LS_KEYS.projectId, projectId), [projectId]);
+  React.useEffect(() => saveJson(LS_KEYS.history, historyItems), [historyItems]);
   React.useEffect(() => {
     if (projectSpec) saveJson(LS_KEYS.spec, projectSpec);
     else localStorage.removeItem(LS_KEYS.spec);
   }, [projectSpec]);
   React.useEffect(() => saveJson(LS_KEYS.files, markdownFiles), [markdownFiles]);
+  React.useEffect(() => {
+    saveHistorySnapshot();
+  }, [projectDraft, transcript, turnResult, projectSpec, markdownFiles]);
 
   const context = { projectDraft, transcript, draftSpec: projectSpec || {} };
   const isExampleMode = !hasUsableApiConfig(apiConfig);
+
+  function getProjectStatus({ transcriptValue = transcript, specValue = projectSpec, filesValue = markdownFiles } = {}) {
+    if (Object.keys(filesValue || {}).length) return "已生成 Markdown";
+    if (specValue) return "已生成 ProjectSpec";
+    if ((transcriptValue || []).length) return "访谈进行中";
+    return "草稿";
+  }
+
+  function hasProjectContent({ draftValue = projectDraft, transcriptValue = transcript, specValue = projectSpec, filesValue = markdownFiles } = {}) {
+    const hasArtifacts = Boolean((transcriptValue || []).length || specValue || Object.keys(filesValue || {}).length);
+    const isUntouchedDefault =
+      draftValue.projectName === defaultProjectDraft.projectName &&
+      draftValue.oneLineIdea === defaultProjectDraft.oneLineIdea &&
+      draftValue.userBackground === defaultProjectDraft.userBackground;
+    if (!hasArtifacts && isUntouchedDefault) return false;
+    return Boolean(
+      draftValue.projectName?.trim() ||
+      draftValue.oneLineIdea?.trim() ||
+      hasArtifacts
+    );
+  }
+
+  function saveHistorySnapshot(overrides = {}) {
+    const draftValue = overrides.projectDraft ?? projectDraft;
+    const transcriptValue = overrides.transcript ?? transcript;
+    const turnValue = overrides.turnResult ?? turnResult;
+    const specValue = overrides.projectSpec ?? projectSpec;
+    const filesValue = overrides.markdownFiles ?? markdownFiles;
+    const idValue = overrides.projectId ?? projectId;
+    if (!hasProjectContent({ draftValue, transcriptValue, specValue, filesValue })) return;
+    setHistoryItems((items) => {
+      const existing = items.find((item) => item.id === idValue);
+      const nextItem = {
+        id: idValue,
+        title: draftValue.projectName?.trim() || specValue?.projectName || "未命名项目",
+        idea: draftValue.oneLineIdea?.trim() || specValue?.oneLineIdea || "",
+        status: getProjectStatus({ transcriptValue, specValue, filesValue }),
+        updatedAt: new Date().toISOString(),
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        projectDraft: draftValue,
+        transcript: transcriptValue,
+        turnResult: turnValue,
+        projectSpec: specValue,
+        markdownFiles: filesValue
+      };
+      return [nextItem, ...items.filter((item) => item.id !== idValue)].slice(0, 20);
+    });
+  }
 
   function resetProjectArtifacts(nextDraft = projectDraft) {
     interviewRunIdRef.current += 1;
@@ -223,10 +281,13 @@ function App() {
     localStorage.removeItem(LS_KEYS.files);
   }
 
-  function beginNewProject() {
+  function beginNewProject({ saveCurrent = true } = {}) {
+    if (saveCurrent) saveHistorySnapshot();
     const nextDraft = createNewProjectDraft();
+    const nextProjectId = crypto.randomUUID();
     setNotice("");
     setBusy("");
+    setProjectId(nextProjectId);
     setProjectDraft(nextDraft);
     resetProjectArtifacts(nextDraft);
     setRoute("create");
@@ -280,6 +341,7 @@ function App() {
       const spec = await buildProjectSpec(apiConfig, context);
       const validated = validateProjectSpec(spec);
       setProjectSpec(validated);
+      saveHistorySnapshot({ projectSpec: validated });
       setRoute("spec");
     } catch (error) {
       setNotice(toUserFacingError(error));
@@ -300,10 +362,12 @@ function App() {
     try {
       const files = await buildMarkdownFiles(apiConfig, spec);
       setMarkdownFiles(files);
+      saveHistorySnapshot({ projectSpec: spec, markdownFiles: files });
       setRoute("results");
     } catch (error) {
       const fallbackFiles = generateMarkdownFilesFromSpec(spec);
       setMarkdownFiles(fallbackFiles);
+      saveHistorySnapshot({ projectSpec: spec, markdownFiles: fallbackFiles });
       setRoute("results");
       setNotice(`${toUserFacingError(error)} 已先使用本地模板生成 Markdown，你可以继续编辑、复制或下载。`);
     } finally {
@@ -311,11 +375,34 @@ function App() {
     }
   }
 
+  function restoreHistoryItem(item) {
+    setNotice("");
+    setBusy("");
+    setProjectId(item.id);
+    setProjectDraft(item.projectDraft || defaultProjectDraft);
+    setTranscript(item.transcript || []);
+    setTurnResult(item.turnResult || createExampleInterviewTurn({ projectDraft: item.projectDraft || defaultProjectDraft }));
+    setProjectSpec(item.projectSpec || null);
+    setMarkdownFiles(item.markdownFiles || {});
+    setRoute(Object.keys(item.markdownFiles || {}).length ? "results" : item.projectSpec ? "spec" : (item.transcript?.length ? "interview" : "create"));
+  }
+
+  function deleteHistoryItem(id) {
+    setHistoryItems((items) => items.filter((item) => item.id !== id));
+    if (id === projectId) beginNewProject({ saveCurrent: false });
+  }
+
+  function clearHistory() {
+    setHistoryItems([]);
+    localStorage.removeItem(LS_KEYS.history);
+  }
+
   const page = {
     home: <HomePage go={setRoute} beginNewProject={beginNewProject} startInterview={startInterview} />,
     config: <ConfigPage apiConfig={apiConfig} setApiConfig={setApiConfig} notice={notice} setNotice={setNotice} busy={busy} setBusy={setBusy} />,
     create: <CreateProjectPage projectDraft={projectDraft} setProjectDraft={setProjectDraft} startInterview={startInterview} busy={busy} />,
     interview: <InterviewPage turnResult={turnResult} transcript={transcript} continueInterview={continueInterview} generateSpec={generateSpec} busy={busy} isExampleMode={isExampleMode} />,
+    history: <HistoryPage items={historyItems} currentId={projectId} restoreItem={restoreHistoryItem} deleteItem={deleteHistoryItem} clearHistory={clearHistory} beginNewProject={beginNewProject} />,
     spec: <SpecPreviewPage projectSpec={projectSpec} setProjectSpec={setProjectSpec} generateSpec={generateSpec} generateFiles={generateFiles} busy={busy} />,
     results: <ResultsPage projectSpec={projectSpec} markdownFiles={markdownFiles} setMarkdownFiles={setMarkdownFiles} />
   }[route];
@@ -353,7 +440,7 @@ function TopNav({ route, go, beginNewProject, compact = false }) {
 }
 
 function Workspace({ route, projectName, children, go, beginNewProject }) {
-  const active = route === "config" ? "模型配置" : route === "results" ? "终端" : route === "interview" ? "提示词探索" : "任务规划";
+  const active = route === "config" ? "模型配置" : route === "results" ? "终端" : route === "interview" ? "提示词探索" : route === "history" ? "历史记录" : "任务规划";
   return (
     <main className="workspace">
       <aside className="side-bar">
@@ -727,6 +814,54 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
           <small>{busy || (canGenerateSpec ? "已达到最低对齐度，可生成初版报告。" : "建议至少完成 2 轮访谈或理解度达到 65%，否则报告可能不详细。")}</small>
         </footer>
       </section>
+    </div>
+  );
+}
+
+function HistoryPage({ items, currentId, restoreItem, deleteItem, clearHistory, beginNewProject }) {
+  const sorted = [...items].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  return (
+    <div className="history-page">
+      <div className="page-title">
+        <h1>历史记录</h1>
+        <p>这里保存当前浏览器里的项目草稿、访谈进度、ProjectSpec 和生成结果。数据只存在本机 localStorage。</p>
+      </div>
+      <div className="history-actions">
+        <button className="solid-action" onClick={() => beginNewProject()}><Rocket size={18} /> 新建项目</button>
+        <button className="ghost-action" onClick={clearHistory} disabled={!sorted.length}><History size={18} /> 清空历史</button>
+      </div>
+      {!sorted.length ? (
+        <section className="panel history-empty">
+          <History size={42} />
+          <h2>还没有历史记录</h2>
+          <p>开始一个项目访谈后，这里会自动保存最近 20 个本地项目快照。</p>
+          <button onClick={() => beginNewProject()}>开始第一个项目</button>
+        </section>
+      ) : (
+        <section className="history-list">
+          {sorted.map((item) => (
+            <article className={`panel history-card ${item.id === currentId ? "current" : ""}`} key={item.id}>
+              <div className="history-card-main">
+                <span className="history-icon"><FileText size={22} /></span>
+                <div>
+                  <h2>{item.title}</h2>
+                  <p>{item.idea || "暂无项目描述"}</p>
+                  <small>更新于 {new Date(item.updatedAt).toLocaleString("zh-CN")} · {item.status}</small>
+                </div>
+              </div>
+              <div className="history-meta">
+                <span>{(item.transcript || []).length} 轮访谈</span>
+                <span>{item.projectSpec ? "有 ProjectSpec" : "未生成规格"}</span>
+                <span>{Object.keys(item.markdownFiles || {}).length ? "有 Markdown" : "未生成文件"}</span>
+              </div>
+              <div className="history-buttons">
+                <button className="solid-action" onClick={() => restoreItem(item)}>{item.id === currentId ? "继续当前项目" : "恢复项目"}</button>
+                <button className="ghost-action danger" onClick={() => deleteItem(item.id)}>删除</button>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

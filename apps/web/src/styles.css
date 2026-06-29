@@ -169,6 +169,25 @@ input, textarea { font: inherit; color: inherit; }
 .ai-action { display: inline-flex; align-items: center; gap: 22px; border-radius: 999px; padding: 28px 48px; font-size: 30px; font-weight: 800; background: linear-gradient(120deg, #2f6df0, #6222d0); box-shadow: 0 0 42px rgba(87,27,193,.3); }
 .center-action p { color: #c4cbd8; font-style: italic; }
 
+.history-page { display: grid; gap: 24px; padding-bottom: 80px; }
+.history-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.history-list { display: grid; gap: 18px; }
+.history-card { display: grid; gap: 18px; padding: 24px; }
+.history-card.current { border-color: rgba(78,222,163,.56); box-shadow: 0 0 0 1px rgba(78,222,163,.12) inset; }
+.history-card-main { display: flex; gap: 18px; align-items: flex-start; }
+.history-icon { display: grid; place-items: center; flex: 0 0 auto; width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, #6d28d9, #2563eb); color: white; }
+.history-card h2 { margin: 0; font-size: 24px; }
+.history-card p { margin: 8px 0; color: #cbd5e1; }
+.history-card small { color: var(--muted); }
+.history-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+.history-meta span { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; color: #d7deeb; background: rgba(7,18,31,.42); font-size: 12px; font-weight: 700; }
+.history-buttons { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.history-empty { display: grid; place-items: center; gap: 12px; min-height: 320px; padding: 48px; text-align: center; color: #d7deeb; }
+.history-empty h2 { margin: 0; font-size: 28px; }
+.history-empty p { max-width: 520px; margin: 0; color: var(--muted); }
+.history-empty button { border-radius: 10px; padding: 13px 18px; background: var(--primary); color: #04122a; font-weight: 800; }
+.danger { color: #fecaca; }
+
 .interview-layout { display: grid; grid-template-columns: 380px 1fr; gap: 36px; margin: -36px auto 0; max-width: 1220px; }
 .interview-status { display: grid; gap: 20px; }
 .progress-card, .clarity-card, .checklist, .missing-card { padding: 24px; }
