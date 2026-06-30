@@ -782,6 +782,10 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
     if (Array.isArray(value)) return value.length > 0;
     return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
   }
+  function isPicked(questionId, value) {
+    const current = answers[questionId];
+    return Array.isArray(current) ? current.includes(value) : current === value;
+  }
   function submitAnswers() {
     const missing = turnResult.questions.filter((question) => question.required && !answerIsFilled(question));
     if (missing.length) {
@@ -822,7 +826,11 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
                 {q.options.map((option) => <button className={(Array.isArray(answers[q.id]) ? answers[q.id].includes(option.label) : answers[q.id] === option.label) ? "picked" : ""} key={option.label} onClick={() => setAnswer(q.id, option.label, q.type === "multi")}>{option.label}<small>{option.description}</small></button>)}
               </div>}
               {q.options.length > 0 && !q.options.some((option) => option.label === "交给 Agent 推荐") && (
-                <button className="agent-recommend-button" type="button" onClick={() => setAnswer(q.id, "交给 Agent 推荐", q.type === "multi")}>
+                <button
+                  className={`agent-recommend-button ${isPicked(q.id, "交给 Agent 推荐") ? "picked" : ""}`}
+                  type="button"
+                  onClick={() => setAnswer(q.id, "交给 Agent 推荐", q.type === "multi")}
+                >
                   交给 Agent 推荐
                   <small>我不懂这个专业问题，请让 Codex/OpenCode 在实现阶段选择稳妥方案。</small>
                 </button>

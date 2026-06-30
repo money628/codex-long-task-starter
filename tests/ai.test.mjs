@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { buildMarkdownFiles, callOpenAICompatible, hasUsableApiConfig, testConnection } from "../packages/ai/src/index.js";
+import { buildMarkdownFiles, callOpenAICompatible, hasUsableApiConfig, runInterviewTurn, testConnection } from "../packages/ai/src/index.js";
 import { createExampleSpec, markdownFileNames } from "../packages/core/src/index.js";
 
 async function withMockOpenAI(handler) {
@@ -185,6 +185,109 @@ test("Markdown 生成请求失败时会降级使用本地模板", async () => {
 
     assert.deepEqual(Object.keys(files).sort(), [...markdownFileNames].sort());
     assert.match(files["START.md"], /启动指令/);
+  } finally {
+    await mock.close();
+  }
+});
+
+test("访谈会过滤已问过的同主题问题并收口给 Agent", async () => {
+  const mock = await withMockOpenAI((req, res) => {
+    sendJson(res, 200, {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              summary: "继续访谈",
+              extractedFacts: { coreGoal: "做数据复盘工具" },
+              missingFields: [],
+              riskFlags: [],
+              confidenceScore: 0.7,
+              questions: [
+                {
+                  id: "weights-again",
+                  type: "single",
+                  question: "关于点赞、收藏、评论、关注、私信的数据复盘权重，你是否接受默认比例？",
+                  why: "确认复盘算法",
+                  required: true,
+                  options: [{ label: "接受", description: "" }]
+                }
+              ],
+              isReadyToGenerateSpec: false
+            })
+          }
+        }
+      ]
+    });
+  });
+
+  try {
+    const turn = await runInterviewTurn(
+      {
+        baseUrl: mock.baseUrl,
+        apiKey: "sk-test-secret",
+        modelName: "test-model",
+        requestMode: "direct"
+      },
+      {
+        projectDraft: {
+          projectName: "内容数据复盘工具",
+          oneLineIdea: "分析小红书内容数据并给出复盘建议",
+          codingExperience: "代码小白"
+        },
+        transcript: [
+          {
+            questions: [
+              {
+                id: "weights",
+                question: "默认权重为点赞30%、收藏20%、评论20%、关注15%、私信15%，你是否接受？"
+              }
+            ],
+            answers: { weights: "交给 Agent 推荐" }
+          },
+          {
+            questions: [{ id: "scope", question: "第一版要服务哪些用户？" }],
+            answers: { scope: "内容运营" }
+          }
+        ],
+        draftSpec: {}
+      }
+    );
+
+    assert.doesNotMatch(turn.questions[0].question, /点赞|收藏|权重/);
+    assert.match(turn.questions[0].question, /Codex\/OpenCode|Agent|业务边界/);
+    assert.equal(turn.isReadyToGenerateSpec, true);
+  } finally {
+    await mock.close();
+  }
+});
+
+test("访谈结构校验失败时返回本地兜底问题而不是卡死", async () => {
+  const mock = await withMockOpenAI((req, res) => {
+    sendJson(res, 200, { choices: [{ message: { content: "{\"summary\":123}" } }] });
+  });
+
+  try {
+    const turn = await runInterviewTurn(
+      {
+        baseUrl: mock.baseUrl,
+        apiKey: "sk-test-secret",
+        modelName: "test-model",
+        requestMode: "direct"
+      },
+      {
+        projectDraft: {
+          projectName: "自动化工具",
+          oneLineIdea: "让 Agent 自动登录并抓取业务数据",
+          codingExperience: "代码小白"
+        },
+        transcript: [{ questions: [{ id: "goal", question: "项目目标是什么？" }], answers: { goal: "自动整理数据" } }],
+        draftSpec: {}
+      }
+    );
+
+    assert.match(turn.summary, /本地兜底访谈/);
+    assert.match(turn.questions[0].question, /Codex\/OpenCode|Agent/);
+    assert.equal(turn.isReadyToGenerateSpec, true);
   } finally {
     await mock.close();
   }

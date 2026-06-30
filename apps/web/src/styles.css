@@ -226,7 +226,8 @@ input, textarea { font: inherit; color: inherit; }
 .structured-question .quick-picks button { border: 1px solid var(--line); border-radius: 12px; text-align: left; }
 .structured-question .quick-picks button.picked { border-color: var(--green); color: var(--green); background: rgba(78,222,163,.12); }
 .structured-question .quick-picks small { display: block; margin-top: 5px; color: #9ca8bb; }
-.agent-recommend-button { width: 100%; margin-top: 10px; border: 1px dashed rgba(78,222,163,.55); border-radius: 12px; padding: 13px 14px; text-align: left; color: var(--green); background: rgba(78,222,163,.08); font-weight: 800; }
+.agent-recommend-button { width: 100%; margin-top: 10px; border: 1px dashed var(--line-strong); border-radius: 12px; padding: 13px 14px; text-align: left; color: #d7deeb; background: rgba(15,28,43,.55); font-weight: 800; }
+.agent-recommend-button.picked { border-color: var(--green); color: var(--green); background: rgba(78,222,163,.12); }
 .agent-recommend-button small { display: block; margin-top: 4px; color: #a8b5c7; font-weight: 600; }
 .structured-question textarea { min-height: 98px; padding: 16px; margin-top: 8px; }
 .structured-question .idea-input { min-height: 86px; margin-top: 14px; border-style: dashed; background: rgba(15,28,43,.72); }

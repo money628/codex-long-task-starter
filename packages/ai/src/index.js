@@ -142,21 +142,83 @@ function normalizeQuestionText(value) {
     .toLowerCase();
 }
 
+const questionTopicGroups = [
+  ["data-review-weight", ["权重", "点赞", "收藏", "评论", "关注", "私信", "数据复盘", "指标", "评分"]],
+  ["login-session", ["登录", "扫码", "cookie", "session", "登录态", "自动登录", "保存状态"]],
+  ["crawler-automation", ["抓取", "采集", "爬虫", "自动化", "浏览器", "反爬"]],
+  ["deployment", ["部署", "服务器", "vercel", "netlify", "云", "上线"]],
+  ["database", ["数据库", "表结构", "schema", "存储", "持久化"]],
+  ["tech-stack", ["框架", "技术栈", "架构", "后端", "前端"]],
+  ["acceptance", ["验收", "完成标准", "donewhen", "怎么算完成"]],
+  ["target-user", ["用户", "目标人群", "谁用", "使用者"]],
+  ["mvp-scope", ["mvp", "第一版", "核心功能", "范围", "不做"]]
+];
+
+function questionTopicSignature(value) {
+  const normalized = normalizeQuestionText(value);
+  const matched = questionTopicGroups
+    .filter(([, keywords]) => keywords.some((keyword) => normalized.includes(normalizeQuestionText(keyword))))
+    .map(([topic]) => topic);
+  if (matched.length) return matched.sort().join("|");
+  return normalized.slice(0, 32);
+}
+
 function limitAndDedupeQuestions(result, askedQuestions) {
   const asked = new Set(askedQuestions.map(normalizeQuestionText).filter(Boolean));
+  const askedTopics = new Set(askedQuestions.map(questionTopicSignature).filter(Boolean));
   const seen = new Set();
+  const seenTopics = new Set();
   const questions = [];
   for (const question of result.questions || []) {
     const normalized = normalizeQuestionText(question.question);
-    if (!normalized || asked.has(normalized) || seen.has(normalized)) continue;
+    const topic = questionTopicSignature(question.question);
+    if (!normalized || asked.has(normalized) || seen.has(normalized) || askedTopics.has(topic) || seenTopics.has(topic)) continue;
     seen.add(normalized);
+    seenTopics.add(topic);
     questions.push(question);
     if (questions.length >= 3) break;
   }
   return {
     ...result,
-    questions: questions.length ? questions : (result.questions || []).slice(0, 1)
+    questions: questions.length ? questions : [
+      {
+        id: "agent-ready-closeout",
+        type: "text",
+        question: "之前的问题已经记录过了。现在只需补充：还有哪些业务边界、禁忌或验收标准必须告诉 Codex/OpenCode？没有就写“没有，交给 Agent 推荐”。",
+        why: "避免重复消耗 token，把专业实现细节交给 Agent 在开发阶段推荐和验证。",
+        required: false,
+        options: []
+      }
+    ],
+    isReadyToGenerateSpec: result.isReadyToGenerateSpec || questions.length === 0
   };
+}
+
+function createFallbackInterviewTurn(context = {}, reason = "") {
+  const round = context.transcript?.length || 0;
+  return validateInterviewTurn({
+    summary: `模型返回格式不稳定，已切换为本地兜底访谈。${round >= 1 ? "当前信息可以先生成初版 ProjectSpec，再由 Codex/OpenCode 在执行阶段补齐技术细节。" : "请先补充项目大方向。"}`,
+    extractedFacts: {
+      projectName: context.projectDraft?.projectName || "未命名项目",
+      oneLineIdea: context.projectDraft?.oneLineIdea || "UNCONFIRMED",
+      userBackground: context.projectDraft?.userBackground || "UNCONFIRMED",
+      codingExperience: context.projectDraft?.codingExperience || "代码小白"
+    },
+    missingFields: round >= 1 ? ["待 Codex/OpenCode Agent 在执行阶段对齐技术细节"] : ["目标用户", "MVP 范围", "验收标准"],
+    riskFlags: [reason ? `模型结构校验失败：${String(reason).slice(0, 120)}` : "模型结构校验失败，已启用兜底问题。"],
+    confidenceScore: round >= 1 ? 0.68 : 0.42,
+    questions: [
+      {
+        id: "agent-ready-summary",
+        type: "text",
+        question: round >= 1 ? "还有哪些业务边界、禁忌或验收标准必须告诉 Codex/OpenCode？没有就写“没有，交给 Agent 推荐”。" : "请用几句话说明项目给谁用、解决什么问题、第一版最重要的结果是什么。",
+        why: "这份报告主要交给 Agent 执行，技术方案不需要你逐项决定，只需要确认大方向和边界。",
+        required: false,
+        options: []
+      }
+    ],
+    isReadyToGenerateSpec: round >= 1
+  });
 }
 
 const interviewSystemPrompt = `你是 Codex 长任务启动器 / Codex Long Task Starter 的 AI 项目访谈官。
@@ -215,17 +277,22 @@ export async function runInterviewTurn(config, context) {
       )
     }
   ]);
-  const result = limitAndDedupeQuestions(
-    await parseAndValidate(config, content, InterviewTurnResultSchema, "InterviewTurnResult"),
-    askedQuestions
-  );
+  let parsedResult;
+  try {
+    parsedResult = await parseAndValidate(config, content, InterviewTurnResultSchema, "InterviewTurnResult");
+  } catch (error) {
+    return createFallbackInterviewTurn(context, error?.message || error);
+  }
+  const result = limitAndDedupeQuestions(parsedResult, askedQuestions);
   const known = context?.draftSpec || {};
   const completeness = getSpecCompleteness({ ...known, ...result.extractedFacts });
+  const hasEnoughInterviewForDraft = (context?.transcript?.length || 0) >= 2 && completeness.score >= 35;
+  const shouldCloseOut = result.isReadyToGenerateSpec && (context?.transcript?.length || 0) >= 1;
   return {
     ...result,
-    confidenceScore: Math.min(result.confidenceScore, completeness.score / 100),
+    confidenceScore: Math.max(Math.min(result.confidenceScore, completeness.score / 100), hasEnoughInterviewForDraft ? 0.66 : 0),
     missingFields: Array.from(new Set([...result.missingFields, ...completeness.missing])),
-    isReadyToGenerateSpec: result.isReadyToGenerateSpec && completeness.canGenerate
+    isReadyToGenerateSpec: (result.isReadyToGenerateSpec && completeness.canGenerate) || hasEnoughInterviewForDraft || shouldCloseOut
   };
 }
 
