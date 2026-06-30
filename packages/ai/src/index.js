@@ -136,8 +136,32 @@ async function parseAndValidateProjectSpec(config, raw) {
   }
 }
 
+function normalizeQuestionText(value) {
+  return String(value || "")
+    .replace(/[？?，,。.：:\s]/g, "")
+    .toLowerCase();
+}
+
+function limitAndDedupeQuestions(result, askedQuestions) {
+  const asked = new Set(askedQuestions.map(normalizeQuestionText).filter(Boolean));
+  const seen = new Set();
+  const questions = [];
+  for (const question of result.questions || []) {
+    const normalized = normalizeQuestionText(question.question);
+    if (!normalized || asked.has(normalized) || seen.has(normalized)) continue;
+    seen.add(normalized);
+    questions.push(question);
+    if (questions.length >= 3) break;
+  }
+  return {
+    ...result,
+    questions: questions.length ? questions : (result.questions || []).slice(0, 1)
+  };
+}
+
 const interviewSystemPrompt = `你是 Codex 长任务启动器 / Codex Long Task Starter 的 AI 项目访谈官。
-你不是模板填空器。你要通过动态追问，把模糊项目想法转成可执行 ProjectSpec。
+你不是模板填空器，也不是普通技术咨询顾问。你要通过动态追问，把模糊项目想法转成可交给 Codex / OpenCode 执行的 ProjectSpec。
+最终报告的主要读者不是用户本人，而是可以读写文件、运行命令、操作浏览器、调试项目的 AI 编程 Agent。
 开始访谈时必须先理解用户是谁、是否代码小白、是否熟悉产品/开发概念，并用匹配用户水平的语言提问。
 必须输出严格 JSON，结构为：
 {
@@ -158,19 +182,43 @@ const interviewSystemPrompt = `你是 Codex 长任务启动器 / Codex Long Task
   ],
   "isReadyToGenerateSpec": false
 }
-每轮最多 3-5 个问题。问题必须覆盖技术实现、UI/UX、方案权衡、风险、边缘情况、验收标准。
-如果用户说“不懂”“没有计划”“后续再考虑”“暂时不确定”，不要反复追问同一个专业问题；把它记录到 unresolvedQuestions、assumptions 或 missingFields，并继续询问更基础、更容易回答的问题。
-如果用户是代码小白，避免直接问框架细节、部署细节、数据库范式等专业问题，优先问使用者、场景、页面、输入输出、成功标准。
+每轮最多 3 个问题，优先问业务目标、用户场景、数据来源、权限边界、页面流程、验收标准和不能做什么。
+不要反复追问已经问过或用户已经表示不懂/后续再考虑的主题。根据 transcript 中的历史问题去重。
+不要把实现细节抛给代码小白做决策。框架、数据库、cookie 持久化、扫码登录状态保存、浏览器自动化、部署方式、文件结构、反爬处理等技术方案，默认交给 Codex/OpenCode Agent 在实现阶段推荐和验证。
+当技术方案确实需要记录时，用“交给 Agent 推荐”作为选项，并把结果写入 assumptions、recommendations 或 unresolvedQuestions。
+示例：不要问“你希望 cookie 保存到哪里？”；应该问“是否允许 Agent 在本机保存登录状态以减少重复扫码？”，选项包含“允许本机保存”“每次都扫码”“交给 Agent 推荐”。
+如果用户说“不懂”“没有计划”“后续再考虑”“暂时不确定”“我是小白”，不要继续追问同一个专业问题；把它记录到 unresolvedQuestions、assumptions 或 missingFields，并继续询问更基础、更容易回答的问题。
+如果用户是代码小白，避免直接问框架细节、部署细节、数据库范式、登录态存储等专业问题，优先问使用者、场景、页面、输入输出、成功标准。
+如果已经完成至少 2 轮访谈，且项目目标、目标用户、MVP 范围、数据来源、验收标准大体明确，可以将 isReadyToGenerateSpec 设为 true，不要为了技术细节无限追问。
 如果用户没有明确说过关键事实，不要编造；用 missingFields 标出。
 confidenceScore 是 0 到 1，但是否能生成还要受必填信息完整性约束。`;
 
 export async function runInterviewTurn(config, context) {
   if (!hasUsableApiConfig(config)) return createExampleInterviewTurn(context);
+  const askedQuestions = (context?.transcript || [])
+    .flatMap((turn) => turn.questions || [])
+    .map((question) => question.question)
+    .filter(Boolean);
   const content = await callOpenAICompatible(config, [
     { role: "system", content: interviewSystemPrompt },
-    { role: "user", content: JSON.stringify(context, null, 2) }
+    {
+      role: "user",
+      content: JSON.stringify(
+        {
+          ...context,
+          reportAudience: "Codex/OpenCode Agent，可以操作电脑、运行命令、读写文件和调试项目。用户只需要确认业务意图、边界和验收标准；专业实现细节应由 Agent 推荐。",
+          askedQuestions,
+          instruction: "请不要重复 askedQuestions 中的主题。遇到代码小白或技术细节，提供“交给 Agent 推荐”选项，并尽快在信息足够时结束访谈。"
+        },
+        null,
+        2
+      )
+    }
   ]);
-  const result = await parseAndValidate(config, content, InterviewTurnResultSchema, "InterviewTurnResult");
+  const result = limitAndDedupeQuestions(
+    await parseAndValidate(config, content, InterviewTurnResultSchema, "InterviewTurnResult"),
+    askedQuestions
+  );
   const known = context?.draftSpec || {};
   const completeness = getSpecCompleteness({ ...known, ...result.extractedFacts });
   return {
@@ -228,12 +276,25 @@ export function createExampleInterviewTurn(context = {}) {
         why: "Codex/OpenCode 长任务需要明确 Done When，否则容易停在“看起来差不多”。",
         required: true,
         options: []
+      },
+      {
+        id: "agent-scope",
+        type: "single",
+        question: "遇到登录、抓取、部署、文件结构这类技术实现问题时，你希望怎么处理？",
+        why: "这份报告主要交给 Codex/OpenCode Agent 执行，很多专业方案可以由 Agent 在实现阶段推荐和验证。",
+        required: false,
+        options: [
+          { label: "交给 Agent 推荐", description: "我只确认业务目标，技术细节由 Agent 选择合理方案。" },
+          { label: "每次问我确认", description: "涉及技术取舍时先停下来问我。" },
+          { label: "先用默认稳妥方案", description: "优先本地、安全、简单，后续再调整。" }
+        ]
       }
     ]
   });
 }
 
 const specSystemPrompt = `你是 ProjectSpec 生成器。根据访谈上下文生成严格 JSON，必须符合 ProjectSpecSchema。
+ProjectSpec 的读者是 Codex/OpenCode 这类可以操作电脑、运行命令、读写文件和调试项目的智能体，不是只给普通用户阅读的问卷报告。
 字段包括 projectName, projectType, oneLineIdea, targetUsers, userPainPoints, coreGoal, mvpScope, outOfScope,
 coreFeatures, rolesAndPermissions, pagesOrModules, dataSources, externalDependencies, techStackPreference,
 deploymentTarget, monetizationIntent, constraints, forbiddenActions, risks, assumptions, recommendations,
@@ -244,6 +305,7 @@ dataSources, externalDependencies, pagesOrModules, rolesAndPermissions, acceptan
 deploymentTarget, risks, doneWhen。
 如果上下文已有足够线索，请写出具体内容；只有完全缺失且无法合理推断时才写 UNCONFIRMED，并把问题写入 unresolvedQuestions。
 不确定内容必须写 UNCONFIRMED。不要编造用户没说过的关键事实；工程建议放 assumptions 或 recommendations。
+用户不懂的技术细节不要视为阻塞。把扫码登录、cookie/session、本地文件、浏览器自动化、抓取策略、部署方式等实现选择写入 recommendations 或 unresolvedQuestions，让 Agent 实现时对齐。
 只输出 JSON。`;
 
 const specCompletionPrompt = `你是 ProjectSpec 完整度补齐器。只输出严格 JSON。

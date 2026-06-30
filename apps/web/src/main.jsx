@@ -66,7 +66,8 @@ const LS_KEYS = {
   spec: "clts.projectSpec",
   files: "clts.markdownFiles",
   projectId: "clts.projectId",
-  history: "clts.projectHistory"
+  history: "clts.projectHistory",
+  pendingAnswers: "clts.pendingInterviewAnswers"
 };
 
 const defaultApiConfig = {
@@ -279,6 +280,7 @@ function App() {
     localStorage.removeItem(LS_KEYS.turn);
     localStorage.removeItem(LS_KEYS.spec);
     localStorage.removeItem(LS_KEYS.files);
+    localStorage.removeItem(LS_KEYS.pendingAnswers);
   }
 
   function beginNewProject({ saveCurrent = true } = {}) {
@@ -303,6 +305,7 @@ function App() {
     localStorage.removeItem(LS_KEYS.transcript);
     localStorage.removeItem(LS_KEYS.spec);
     localStorage.removeItem(LS_KEYS.files);
+    localStorage.removeItem(LS_KEYS.pendingAnswers);
     setBusy("正在生成访谈问题...");
     setNotice("");
     try {
@@ -725,9 +728,25 @@ function Switch({ label, detail, on, onClick }) {
 }
 
 function InterviewPage({ turnResult, transcript, continueInterview, generateSpec, busy, isExampleMode }) {
-  const [answers, setAnswers] = React.useState({});
+  const turnKey = React.useMemo(
+    () => JSON.stringify((turnResult.questions || []).map((question) => [question.id, question.question])),
+    [turnResult]
+  );
+  const topRef = React.useRef(null);
+  const [answers, setAnswers] = React.useState(() => {
+    const saved = loadJson(LS_KEYS.pendingAnswers, null);
+    return saved?.turnKey === turnKey ? saved.answers || {} : {};
+  });
   const [localNotice, setLocalNotice] = React.useState("");
-  React.useEffect(() => setAnswers({}), [turnResult]);
+  React.useEffect(() => {
+    const saved = loadJson(LS_KEYS.pendingAnswers, null);
+    setAnswers(saved?.turnKey === turnKey ? saved.answers || {} : {});
+    setLocalNotice("");
+    window.setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }, [turnKey]);
+  React.useEffect(() => {
+    saveJson(LS_KEYS.pendingAnswers, { turnKey, answers, savedAt: new Date().toISOString() });
+  }, [turnKey, answers]);
   const progress = Math.round((turnResult.confidenceScore || 0) * 100);
   const canGenerateSpec = turnResult.isReadyToGenerateSpec || transcript.length >= 2 || progress >= 65;
   const confirmed = Object.keys(turnResult.extractedFacts || {}).filter((key) => {
@@ -769,6 +788,7 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
       setLocalNotice(`请先回答必填问题：${missing.map((question) => question.question).join("、")}`);
       return;
     }
+    localStorage.removeItem(LS_KEYS.pendingAnswers);
     continueInterview(answers);
   }
   return (
@@ -786,11 +806,12 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
         </section>
         <section className="risk-note"><strong>{isExampleMode ? "示例模式" : "风险提示"}</strong><p>{turnResult.riskFlags.join(" / ") || "暂无风险提示"}</p></section>
       </aside>
-      <section className="chat-panel panel">
+      <section className="chat-panel panel" ref={topRef}>
         <header><span className="round-icon"><Bot size={24} /></span><div><h1>{primaryQuestion?.question || "AI 访谈"}</h1><p>{turnResult.summary}</p></div><b>{isExampleMode ? "示例模式" : "真实 AI 访谈"}</b></header>
         <div className="question-card">
           <h2>{primaryQuestion?.question}</h2>
           <div className="why-box"><CircleHelp size={22} /><div><strong>为什么问这个？</strong><p>{primaryQuestion?.why}</p></div></div>
+          <p className="agent-note">这份报告会交给 Codex / OpenCode 这类 Agent 执行。你不懂的技术细节可以选择“交给 Agent 推荐”，只需要确认目标、边界和验收标准。</p>
         </div>
         <div className="question-list">
           {turnResult.questions.map((q) => (
@@ -800,6 +821,12 @@ function InterviewPage({ turnResult, transcript, continueInterview, generateSpec
               {q.options.length > 0 && <div className="quick-picks">
                 {q.options.map((option) => <button className={(Array.isArray(answers[q.id]) ? answers[q.id].includes(option.label) : answers[q.id] === option.label) ? "picked" : ""} key={option.label} onClick={() => setAnswer(q.id, option.label, q.type === "multi")}>{option.label}<small>{option.description}</small></button>)}
               </div>}
+              {q.options.length > 0 && !q.options.some((option) => option.label === "交给 Agent 推荐") && (
+                <button className="agent-recommend-button" type="button" onClick={() => setAnswer(q.id, "交给 Agent 推荐", q.type === "multi")}>
+                  交给 Agent 推荐
+                  <small>我不懂这个专业问题，请让 Codex/OpenCode 在实现阶段选择稳妥方案。</small>
+                </button>
+              )}
               {q.type === "text" && <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value, false)} placeholder="请输入你的补充说明；不确定可以写“后续再考虑”。" />}
               <textarea className="idea-input" value={answers[`${q.id}__idea`] || ""} onChange={(e) => setFreeIdea(q.id, e.target.value)} placeholder="你的想法 / 不懂的地方 / 当前没有计划都可以写在这里。" />
               <button className="postpone-button" type="button" onClick={() => postponeQuestion(q)}>当前没计划，后续再考虑</button>
