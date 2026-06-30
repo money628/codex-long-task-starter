@@ -292,3 +292,68 @@ test("访谈结构校验失败时返回本地兜底问题而不是卡死", async
     await mock.close();
   }
 });
+
+test("代码小白场景会过滤模型选择和登录注册等实现问题", async () => {
+  const mock = await withMockOpenAI((req, res) => {
+    sendJson(res, 200, {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              summary: "继续访谈",
+              extractedFacts: { coreGoal: "做本地内容创作助手" },
+              missingFields: [],
+              riskFlags: [],
+              confidenceScore: 0.7,
+              questions: [
+                {
+                  id: "model-choice",
+                  type: "single",
+                  question: "您更倾向于使用哪种 AI 模型来生成内容？",
+                  why: "确认模型选择",
+                  required: true,
+                  options: [{ label: "DeepSeek", description: "" }]
+                },
+                {
+                  id: "login",
+                  type: "single",
+                  question: "您希望这个工具需要用户登录/注册吗？",
+                  why: "确认账号系统",
+                  required: true,
+                  options: [{ label: "需要", description: "" }]
+                }
+              ],
+              isReadyToGenerateSpec: false
+            })
+          }
+        }
+      ]
+    });
+  });
+
+  try {
+    const turn = await runInterviewTurn(
+      {
+        baseUrl: mock.baseUrl,
+        apiKey: "sk-test-secret",
+        modelName: "test-model",
+        requestMode: "direct"
+      },
+      {
+        projectDraft: {
+          projectName: "内容创作助手",
+          oneLineIdea: "本地可运行的内容创作助手，不是平台自动化工具。",
+          codingExperience: "代码小白",
+          specialRequirements: "所有数据本地保存，不做用户系统。"
+        },
+        transcript: [{ questions: [{ id: "goal", question: "项目目标是什么？" }], answers: { goal: "每天生成内容方案" } }],
+        draftSpec: {}
+      }
+    );
+
+    assert.doesNotMatch(turn.questions.map((q) => q.question).join("\n"), /AI 模型|登录\/注册/);
+    assert.match(turn.questions[0].question, /Codex\/OpenCode|Agent|业务边界/);
+  } finally {
+    await mock.close();
+  }
+});

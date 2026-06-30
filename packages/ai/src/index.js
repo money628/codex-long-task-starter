@@ -149,6 +149,8 @@ const questionTopicGroups = [
   ["deployment", ["部署", "服务器", "vercel", "netlify", "云", "上线"]],
   ["database", ["数据库", "表结构", "schema", "存储", "持久化"]],
   ["tech-stack", ["框架", "技术栈", "架构", "后端", "前端"]],
+  ["ai-model-choice", ["ai模型", "模型来生成", "哪种模型", "大模型", "gpt", "deepseek", "kimi", "qwen"]],
+  ["auth-account-system", ["用户登录", "登录/注册", "注册", "账号系统", "用户系统"]],
   ["acceptance", ["验收", "完成标准", "donewhen", "怎么算完成"]],
   ["target-user", ["用户", "目标人群", "谁用", "使用者"]],
   ["mvp-scope", ["mvp", "第一版", "核心功能", "范围", "不做"]]
@@ -163,7 +165,19 @@ function questionTopicSignature(value) {
   return normalized.slice(0, 32);
 }
 
-function limitAndDedupeQuestions(result, askedQuestions) {
+function shouldDropForBeginnerAgentFlow(question, context = {}) {
+  const normalized = normalizeQuestionText(question.question);
+  const draftText = JSON.stringify(context?.projectDraft || {});
+  const isBeginner = /代码小白|小白|不懂代码/.test(draftText);
+  const isLocalFirst = /本地|local|不上传|不做用户系统|不是平台自动化/.test(draftText);
+  if (!isBeginner) return false;
+  if (/哪种模型|ai模型|模型来生成|gpt|deepseek|kimi|qwen/.test(normalized)) return true;
+  if (/数据库|schema|框架|技术栈|部署|cookie|session|登录态/.test(normalized)) return true;
+  if (isLocalFirst && /登录注册|用户登录|账号系统|用户系统/.test(normalized)) return true;
+  return false;
+}
+
+function limitAndDedupeQuestions(result, askedQuestions, context = {}) {
   const asked = new Set(askedQuestions.map(normalizeQuestionText).filter(Boolean));
   const askedTopics = new Set(askedQuestions.map(questionTopicSignature).filter(Boolean));
   const seen = new Set();
@@ -172,6 +186,7 @@ function limitAndDedupeQuestions(result, askedQuestions) {
   for (const question of result.questions || []) {
     const normalized = normalizeQuestionText(question.question);
     const topic = questionTopicSignature(question.question);
+    if (shouldDropForBeginnerAgentFlow(question, context)) continue;
     if (!normalized || asked.has(normalized) || seen.has(normalized) || askedTopics.has(topic) || seenTopics.has(topic)) continue;
     seen.add(normalized);
     seenTopics.add(topic);
@@ -247,6 +262,7 @@ const interviewSystemPrompt = `你是 Codex 长任务启动器 / Codex Long Task
 每轮最多 3 个问题，优先问业务目标、用户场景、数据来源、权限边界、页面流程、验收标准和不能做什么。
 不要反复追问已经问过或用户已经表示不懂/后续再考虑的主题。根据 transcript 中的历史问题去重。
 不要把实现细节抛给代码小白做决策。框架、数据库、cookie 持久化、扫码登录状态保存、浏览器自动化、部署方式、文件结构、反爬处理等技术方案，默认交给 Codex/OpenCode Agent 在实现阶段推荐和验证。
+不要问代码小白“使用哪种 AI 模型”“选择哪个大模型”“数据库怎么设计”“是否需要登录注册”这类实现/架构问题；如果项目已说明本地单用户或不是平台自动化，默认不做用户系统和平台自动化。
 当技术方案确实需要记录时，用“交给 Agent 推荐”作为选项，并把结果写入 assumptions、recommendations 或 unresolvedQuestions。
 示例：不要问“你希望 cookie 保存到哪里？”；应该问“是否允许 Agent 在本机保存登录状态以减少重复扫码？”，选项包含“允许本机保存”“每次都扫码”“交给 Agent 推荐”。
 如果用户说“不懂”“没有计划”“后续再考虑”“暂时不确定”“我是小白”，不要继续追问同一个专业问题；把它记录到 unresolvedQuestions、assumptions 或 missingFields，并继续询问更基础、更容易回答的问题。
@@ -283,7 +299,7 @@ export async function runInterviewTurn(config, context) {
   } catch (error) {
     return createFallbackInterviewTurn(context, error?.message || error);
   }
-  const result = limitAndDedupeQuestions(parsedResult, askedQuestions);
+  const result = limitAndDedupeQuestions(parsedResult, askedQuestions, context);
   const known = context?.draftSpec || {};
   const completeness = getSpecCompleteness({ ...known, ...result.extractedFacts });
   const hasEnoughInterviewForDraft = (context?.transcript?.length || 0) >= 2 && completeness.score >= 35;
